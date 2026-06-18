@@ -780,13 +780,18 @@ pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -
     let base_path = Path::new(&base_dir);
     let full_scan_dir = base_path.join(&scan_dir);
 
+    // 规范化路径进行安全检查
+    let resolved = full_scan_dir.canonicalize()
+        .map_err(|_| format!("无法访问扫描目录: {}", scan_dir))?;
+    let base_resolved = base_path.canonicalize()
+        .map_err(|_| "无法访问基础目录".to_string())?;
+
     // 安全检查：确保扫描目录在 base_dir 内
-    let resolved = full_scan_dir.resolve();
-    if !resolved.starts_with(base_path) {
+    if !resolved.starts_with(&base_resolved) {
         return Err("越界访问：扫描目录不允许访问软件根目录之外的路径".to_string());
     }
 
-    if !resolved.exists() || !resolved.is_dir() {
+    if !resolved.is_dir() {
         return Err(format!("扫描目录不存在或不是目录: {}", scan_dir));
     }
 
