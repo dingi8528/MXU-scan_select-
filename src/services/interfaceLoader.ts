@@ -11,7 +11,7 @@ import { loggers } from '@/utils/logger';
 import { parseJsonc } from '@/utils/jsonc';
 import { isTauri } from '@/utils/paths';
 import { setBackendPort } from '@/utils/backendApi';
-import * as maaService from '@/services/maaService';
+import maaService from '@/services/maaService';
 
 const log = loggers.app;
 
@@ -350,6 +350,47 @@ async function processScanSelectOptions(
       // 扫描失败时设置为空数组
       option.cases = [];
     }
+  }
+}
+
+/**
+ * 重新扫描指定的 scan_select 选项
+ * @param pi ProjectInterface 对象
+ * @param basePath interface.json 所在目录的绝对路径
+ * @param optionKey 要重新扫描的选项 key
+ */
+export async function rescanScanSelectOption(
+  pi: ProjectInterface,
+  basePath: string,
+  optionKey: string,
+): Promise<void> {
+  if (!pi.option) return;
+
+  const option = pi.option[optionKey];
+  if (!option || option.type !== 'scan_select') {
+    log.warn(`选项 ${optionKey} 不是 scan_select 类型，跳过扫描`);
+    return;
+  }
+
+  const scanSelectOption = option as ScanSelectOption;
+
+  try {
+    const files = await maaService.scanDirectory(
+      basePath,
+      scanSelectOption.scan_dir,
+      scanSelectOption.scan_filter,
+    );
+
+    // 将扫描结果转换为 cases
+    scanSelectOption.cases = files.map((file) => ({
+      name: file,
+      label: file,
+    })) as CaseItem[];
+
+    log.info(`scan_select 选项 ${optionKey} 重新扫描完成，找到 ${files.length} 个匹配项`);
+  } catch (err) {
+    log.error(`scan_select 选项 ${optionKey} 重新扫描失败:`, err);
+    scanSelectOption.cases = [];
   }
 }
 

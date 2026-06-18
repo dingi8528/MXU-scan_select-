@@ -217,6 +217,8 @@ export interface ScanSelectOption {
   scan_dir: string;
   /** 文件过滤规则，如 *.json */
   scan_filter: string;
+  /** 动态生成的选项列表 */
+  cases: CaseItem[];
   pipeline_override: Record<string, unknown>;
   default_case?: string;
 }

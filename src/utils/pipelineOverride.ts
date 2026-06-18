@@ -9,6 +9,7 @@ import type {
   SelectedTask,
   OptionValue,
   OptionDefinition,
+  InputOption,
 } from '@/types/interface';
 import { isMxuSpecialTask, getMxuSpecialTask } from '@/types/specialTasks';
 import { loggers } from './logger';
@@ -107,10 +108,10 @@ const collectOptionOverrides = (
     }
   } else if (
     optionValue.type === 'input' &&
-    'pipeline_override' in optionDef &&
+    'inputs' in optionDef &&
     optionDef.pipeline_override
   ) {
-    const inputDefs = optionDef.inputs || [];
+    const inputDefs = (optionDef as { inputs?: InputOption['inputs'] }).inputs || [];
     let overrideStr = JSON.stringify(optionDef.pipeline_override);
 
     for (const inputDef of inputDefs) {

@@ -5,11 +5,12 @@ import { loadIconAsDataUrl, useResolvedContent } from '@/services/contentResolve
 import type { OptionValue, CaseItem, InputItem, OptionDefinition } from '@/types/interface';
 import { findMxuOptionByKey } from '@/types/specialTasks';
 import clsx from 'clsx';
-import { Info, AlertCircle, Loader2, FileText, Link, ChevronDown, Check } from 'lucide-react';
+import { Info, AlertCircle, Loader2, FileText, Link, ChevronDown, Check, RefreshCw } from 'lucide-react';
 import { getInterfaceLangKey } from '@/i18n';
 import { findSwitchCase } from '@/utils/optionHelpers';
 import { SwitchButton, TextInput, FileInput, TimeInput } from './FormControls';
 import { Tooltip } from './ui/Tooltip';
+import { rescanScanSelectOption } from '@/services/interfaceLoader';
 
 /** 判断 switch 类型的选项是否有子选项 */
 export function switchHasNestedOptions(optionDef: OptionDefinition): boolean {
@@ -614,6 +615,21 @@ export function OptionEditor({
   const useComboBox = optionDef.cases.length > 4;
   const SelectComponent = useComboBox ? OptionSelectComboBox : OptionSelectDropdown;
 
+  // scan_select 类型需要刷新按钮
+  const isScanSelect = optionDef.type === 'scan_select';
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing || !projectInterface) return;
+    setIsRefreshing(true);
+    try {
+      await rescanScanSelectOption(projectInterface, basePath, optionKey);
+      // 可选：触发界面更新
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div
       className={clsx(
@@ -659,6 +675,23 @@ export function OptionEditor({
             });
           }}
         />
+        {/* scan_select 类型的刷新按钮 */}
+        {isScanSelect && (
+          <Tooltip content={t('common.refresh') || '刷新'}>
+            <button
+              className={clsx(
+                'p-1.5 rounded-md transition-colors',
+                'hover:bg-bg-hover',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                isRefreshing && 'animate-spin',
+              )}
+              disabled={effectiveDisabled || isRefreshing}
+              onClick={handleRefresh}
+            >
+              <RefreshCw size={16} />
+            </button>
+          </Tooltip>
+        )}
       </div>
       {/* 渲染嵌套选项 */}
       {nestedOptionKeys.length > 0 && (
