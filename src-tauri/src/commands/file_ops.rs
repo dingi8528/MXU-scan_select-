@@ -771,3 +771,60 @@ fn parse_export_timestamp(dir_name: &str) -> Option<String> {
     // 形状校验通过 ⇒ 全是 ASCII，from_utf8 必然成功
     Some(std::str::from_utf8(tail).ok()?.to_string())
 }
+
+/// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表
+#[tauri::command]
+pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -> Result<Vec<String>, String> {
+    use std::path::Path;
+
+    let base_path = Path::new(&base_dir);
+    let full_scan_dir = base_path.join(&scan_dir);
+
+    // 安全检查：确保扫描目录在 base_dir 内
+    let resolved = full_scan_dir.resolve();
+    if !resolved.starts_with(base_path) {
+        return Err("越界访问：扫描目录不允许访问软件根目录之外的路径".to_string());
+    }
+
+    if !resolved.exists() || !resolved.is_dir() {
+        return Err(format!("扫描目录不存在或不是目录: {}", scan_dir));
+    }
+
+    let mut matched_files = Vec::new();
+
+    // 使用 glob 匹配文件
+    for entry in walkdir(&resolved, &scan_filter)? {
+        matched_files.push(entry);
+    };
+
+    matched_files.sort();
+    Ok(matched_files)
+}
+
+fn walkdir(dir: &Path, filter: &str) -> Result<Vec<String>, String> {
+    let mut results = Vec::new();
+
+    // 将 glob 模式转换为 walkdir 能处理的模式
+    // 比如 "*.json" 变成 "*.json" 直接用 glob
+    let pattern = dir.join(filter);
+    let pattern_str = pattern.to_string_lossy();
+
+    // 使用 glob crate 进行模式匹配
+    for entry in glob::glob(&pattern_str)
+        .map_err(|e| format!("glob 模式匹配失败: {}", e))?
+    {
+        match entry {
+            Ok(path) => {
+                if path.is_file() {
+                    // 计算相对路径
+                    if let Ok(relative) = path.strip_prefix(dir) {
+                        results.push(relative.to_string_lossy().replace('\\', "/"));
+                    }
+                }
+            }
+            Err(e) => log::warn!("glob 条目错误: {}", e),
+        }
+    }
+
+    Ok(results)
+}

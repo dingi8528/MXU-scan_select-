@@ -1151,6 +1151,32 @@ export const maaService = {
       return '';
     }
   },
+
+  /**
+   * 扫描指定目录下匹配过滤规则的文件
+   * @param baseDir 基础目录（资源根目录）
+   * @param scanDir 扫描子目录
+   * @param scanFilter 文件过滤规则（如 *.json）
+   * @returns 匹配文件的相对路径列表
+   */
+  async scanDirectory(baseDir: string, scanDir: string, scanFilter: string): Promise<string[]> {
+    if (!isTauri()) {
+      return [];
+    }
+    log.info('扫描目录:', baseDir, '/', scanDir, ', 过滤:', scanFilter);
+    try {
+      const files = await invoke<string[]>('scan_directory', {
+        baseDir,
+        scanDir,
+        scanFilter,
+      });
+      log.info('扫描完成，找到', files.length, '个文件');
+      return files;
+    } catch (err) {
+      log.error('扫描目录失败:', err);
+      throw err;
+    }
+  },
 };
 
 export default maaService;

@@ -254,6 +254,7 @@ pub fn run() {
             commands::file_ops::check_exe_path,
             commands::file_ops::set_executable,
             commands::file_ops::export_logs,
+            commands::file_ops::scan_directory,
             // 状态查询命令
             commands::state::maa_get_instance_state,
             commands::state::maa_get_all_states,

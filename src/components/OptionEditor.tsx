@@ -387,7 +387,7 @@ export function OptionEditor({
       const isChecked = value?.type === 'switch' ? value.value : false;
       return findSwitchCase(optionDef.cases, isChecked);
     }
-    if (optionDef.type === 'select' || !optionDef.type) {
+    if (optionDef.type === 'select' || optionDef.type === 'scan_select' || !optionDef.type) {
       const caseName =
         value?.type === 'select'
           ? value.caseName

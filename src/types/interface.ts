@@ -132,7 +132,7 @@ export interface TaskItem {
   option?: string[];
 }
 
-export type OptionType = 'select' | 'checkbox' | 'input' | 'switch';
+export type OptionType = 'select' | 'checkbox' | 'input' | 'switch' | 'scan_select';
 
 export interface CaseItem {
   name: string;
@@ -206,7 +206,22 @@ export interface InputOption {
   pipeline_override?: Record<string, unknown>;
 }
 
-export type OptionDefinition = SelectOption | CheckboxOption | SwitchOption | InputOption;
+export interface ScanSelectOption {
+  type: 'scan_select';
+  label?: string;
+  description?: string;
+  icon?: string;
+  controller?: string[];
+  resource?: string[];
+  /** 扫描目录，相对于资源根目录 */
+  scan_dir: string;
+  /** 文件过滤规则，如 *.json */
+  scan_filter: string;
+  pipeline_override: Record<string, unknown>;
+  default_case?: string;
+}
+
+export type OptionDefinition = SelectOption | CheckboxOption | SwitchOption | InputOption | ScanSelectOption;
 
 // 运行时状态类型
 export interface SelectedTask {

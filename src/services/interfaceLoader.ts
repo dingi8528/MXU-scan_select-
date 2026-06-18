@@ -11,6 +11,7 @@ import { loggers } from '@/utils/logger';
 import { parseJsonc } from '@/utils/jsonc';
 import { isTauri } from '@/utils/paths';
 import { setBackendPort } from '@/utils/backendApi';
+import * as maaService from '@/services/maaService';
 
 const log = loggers.app;
 
@@ -298,6 +299,61 @@ async function processImports(
 }
 
 // ============================================================================
+// scan_select 处理
+// ============================================================================
+
+import type { CaseItem, ScanSelectOption } from '@/types/interface';
+
+/**
+ * 处理 scan_select 类型的选项，扫描目录填充 cases
+ * @param pi ProjectInterface 对象
+ * @param basePath interface.json 所在目录的绝对路径
+ */
+async function processScanSelectOptions(
+  pi: ProjectInterface,
+  basePath: string,
+): Promise<void> {
+  if (!pi.option) return;
+
+  const scanSelectKeys = Object.keys(pi.option).filter(
+    (key) => pi.option![key].type === 'scan_select',
+  );
+
+  if (scanSelectKeys.length === 0) return;
+
+  log.info(`发现 ${scanSelectKeys.length} 个 scan_select 选项，开始扫描...`);
+
+  for (const optionKey of scanSelectKeys) {
+    const option = pi.option![optionKey] as ScanSelectOption;
+
+    // scan_select 的 cases 必须为空，由扫描结果生成
+    if (option.cases && option.cases.length > 0) {
+      log.warn(`scan_select 选项 ${optionKey} 不应预置 cases，将被扫描结果覆盖`);
+    }
+
+    try {
+      const files = await maaService.scanDirectory(
+        basePath,
+        option.scan_dir,
+        option.scan_filter,
+      );
+
+      // 将扫描结果转换为 cases
+      option.cases = files.map((file) => ({
+        name: file,
+        label: file,
+      })) as CaseItem[];
+
+      log.info(`scan_select 选项 ${optionKey} 扫描完成，找到 ${files.length} 个匹配项`);
+    } catch (err) {
+      log.error(`scan_select 选项 ${optionKey} 扫描失败:`, err);
+      // 扫描失败时设置为空数组
+      option.cases = [];
+    }
+  }
+}
+
+// ============================================================================
 // 平台过滤
 // ============================================================================
 
@@ -414,6 +470,9 @@ export async function autoLoadInterface(): Promise<LoadResult> {
 
     // 过滤掉当前平台不支持的控制器（以后端 OS 为准，而非浏览器 OS）
     filterControllersByPlatform(pi, backendOS);
+
+    // 处理 scan_select 选项，扫描目录填充 cases
+    await processScanSelectOptions(pi, basePath);
 
     const translations = await loadTranslationsFromLocal(pi, relativeBasePath);
     return { interface: pi, translations, basePath, dataPath, backendOS, backendArch };
