@@ -17,6 +17,52 @@ import { findSwitchCase } from './optionHelpers';
 import { createDefaultOptionValue, sanitizeOptionValue } from '@/stores/helpers';
 
 /**
+ * 递归处理 scan_select 的 pipeline_override，将 attach 中的 {option_name} 占位符替换为选中值
+ * 参考 MWU 的 _assign_scan_select_attach_value 实现
+ */
+function assignScanSelectAttachValue(
+  value: unknown,
+  optionName: string,
+  selectedValue: string,
+): unknown {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => assignScanSelectAttachValue(item, optionName, selectedValue))
+      .filter((item) => item !== null);
+  }
+
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    // 先递归处理所有嵌套值
+    const copied: Record<string, unknown> = {};
+    for (const [key, nestedValue] of Object.entries(obj)) {
+      const processed = assignScanSelectAttachValue(nestedValue, optionName, selectedValue);
+      if (processed !== null) {
+        copied[key] = processed;
+      }
+    }
+
+    // 然后检查 attach 是否包含 option_name，有则替换
+    const attachValue = copied['attach'];
+    if (attachValue && typeof attachValue === 'object' && !Array.isArray(attachValue)) {
+      const attach = attachValue as Record<string, unknown>;
+      if (optionName in attach) {
+        // 找到匹配的占位符，替换为选中值
+        copied['attach'] = { ...attach, [optionName]: selectedValue };
+      }
+    }
+
+    return copied;
+  }
+
+  return value;
+}
+
+/**
  * 检查选项是否与当前控制器/资源不兼容
  * 返回 true 表示不兼容，应跳过该选项
  */
@@ -76,7 +122,7 @@ const collectOptionOverrides = (
       }
     }
   } else if (
-    (optionValue.type === 'select' || optionValue.type === 'switch') &&
+    (optionValue.type === 'select' || optionValue.type === 'switch' || optionValue.type === 'scan_select') &&
     'cases' in optionDef
   ) {
     let caseName: string;
@@ -84,26 +130,48 @@ const collectOptionOverrides = (
       const isChecked = optionValue.value;
       const switchCase = findSwitchCase(optionDef.cases, isChecked);
       caseName = switchCase?.name || (isChecked ? 'Yes' : 'No');
+    } else if (optionValue.type === 'scan_select') {
+      // scan_select: 从 caseName 获取选中值，并处理 pipeline_override 中的占位符替换
+      caseName = optionValue.caseName;
+      if (optionDef.pipeline_override) {
+        const selectedValue = caseName || '';
+        const processedOverride = assignScanSelectAttachValue(
+          optionDef.pipeline_override,
+          optionKey,
+          selectedValue,
+        );
+        if (processedOverride) {
+          // 处理可能的数组结果（MaaFramework 支持 pipeline_override 为数组）
+          if (Array.isArray(processedOverride)) {
+            overrides.push(...processedOverride);
+          } else {
+            overrides.push(processedOverride as Record<string, unknown>);
+          }
+        }
+      }
     } else {
       caseName = optionValue.caseName;
     }
 
-    const caseDef = optionDef.cases?.find((c) => c.name === caseName);
+    // select/switch 的 case pipeline_override 处理（scan_select 不走这里）
+    if (optionValue.type !== 'scan_select') {
+      const caseDef = optionDef.cases?.find((c) => c.name === caseName);
 
-    if (caseDef?.pipeline_override) {
-      overrides.push(caseDef.pipeline_override as Record<string, unknown>);
-    }
+      if (caseDef?.pipeline_override) {
+        overrides.push(caseDef.pipeline_override as Record<string, unknown>);
+      }
 
-    if (caseDef?.option) {
-      for (const nestedKey of caseDef.option) {
-        collectOptionOverrides(
-          nestedKey,
-          optionValues,
-          overrides,
-          allOptions,
-          controllerName,
-          resourceName,
-        );
+      if (caseDef?.option) {
+        for (const nestedKey of caseDef.option) {
+          collectOptionOverrides(
+            nestedKey,
+            optionValues,
+            overrides,
+            allOptions,
+            controllerName,
+            resourceName,
+          );
+        }
       }
     }
   } else if (
