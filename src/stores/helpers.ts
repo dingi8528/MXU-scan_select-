@@ -26,9 +26,10 @@ export const createDefaultOptionValue = (optionDef: OptionDefinition): OptionVal
     return { type: 'checkbox', caseNames: [...defaultCases] };
   }
 
-  // select type (default)
+  // select / scan_select type (default)
   const defaultCase = optionDef.default_case || optionDef.cases[0]?.name || '';
-  return { type: 'select', caseName: defaultCase };
+  const valueType = optionDef.type === 'scan_select' ? 'scan_select' : 'select';
+  return { type: valueType, caseName: defaultCase };
 };
 
 export type OptionValueSanitizeLogger = (message: string) => void;
@@ -57,7 +58,8 @@ export const sanitizeOptionValue = (
     return null;
   }
 
-  if ((!optionDef.type || optionDef.type === 'select') && value.type === 'select') {
+  if ((!optionDef.type || optionDef.type === 'select' || optionDef.type === 'scan_select') &&
+      (value.type === 'select' || value.type === 'scan_select')) {
     const caseExists = optionDef.cases.some((caseDef) => caseDef.name === value.caseName);
     if (!caseExists) {
       warn?.(`选项 "${optionKey}" 的 case "${value.caseName}" 已不存在，已重置为默认值`);
@@ -120,7 +122,7 @@ export const initializeAllOptionValues = (
     result[optKey] = createDefaultOptionValue(optDef);
 
     // 处理嵌套选项：根据当前默认值找到对应的 case，递归初始化其子选项
-    if (optDef.type === 'switch' || optDef.type === 'select' || !optDef.type) {
+    if (optDef.type === 'switch' || optDef.type === 'select' || optDef.type === 'scan_select' || !optDef.type) {
       const currentValue = result[optKey];
       let selectedCase;
 
@@ -129,7 +131,9 @@ export const initializeAllOptionValues = (
         selectedCase = findSwitchCase(optDef.cases, isChecked);
       } else if ('cases' in optDef) {
         const caseName =
-          currentValue.type === 'select' ? currentValue.caseName : optDef.cases?.[0]?.name;
+          (currentValue.type === 'select' || currentValue.type === 'scan_select')
+            ? currentValue.caseName
+            : optDef.cases?.[0]?.name;
         selectedCase = optDef.cases?.find((c) => c.name === caseName);
       }
 

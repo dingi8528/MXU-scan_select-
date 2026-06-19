@@ -132,11 +132,12 @@ const collectOptionOverrides = (
       caseName = switchCase?.name || (isChecked ? 'Yes' : 'No');
     } else if (optionValue.type === 'scan_select') {
       // scan_select: 从 caseName 获取选中值，并处理 pipeline_override 中的占位符替换
-      caseName = optionValue.caseName;
-      if (optionDef.pipeline_override) {
+      caseName = (optionValue as { caseName: string }).caseName;
+      const scanSelectDef = optionDef as { pipeline_override?: Record<string, unknown> };
+      if (scanSelectDef.pipeline_override) {
         const selectedValue = caseName || '';
         const processedOverride = assignScanSelectAttachValue(
-          optionDef.pipeline_override,
+          scanSelectDef.pipeline_override,
           optionKey,
           selectedValue,
         );
@@ -150,7 +151,7 @@ const collectOptionOverrides = (
         }
       }
     } else {
-      caseName = optionValue.caseName;
+      caseName = (optionValue as { caseName: string }).caseName;
     }
 
     // select/switch 的 case pipeline_override 处理（scan_select 不走这里）
