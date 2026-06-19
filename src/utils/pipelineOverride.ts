@@ -122,7 +122,7 @@ const collectOptionOverrides = (
       }
     }
   } else if (
-    (optionValue.type === 'select' || optionValue.type === 'switch' || optionValue.type === 'scan_select') &&
+    (optionValue.type === 'select' || optionValue.type === 'switch') &&
     'cases' in optionDef
   ) {
     let caseName: string;
@@ -130,9 +130,12 @@ const collectOptionOverrides = (
       const isChecked = optionValue.value;
       const switchCase = findSwitchCase(optionDef.cases, isChecked);
       caseName = switchCase?.name || (isChecked ? 'Yes' : 'No');
-    } else if (optionValue.type === 'scan_select') {
-      // scan_select: 从 caseName 获取选中值，并处理 pipeline_override 中的占位符替换
-      caseName = (optionValue as { caseName: string }).caseName;
+    } else {
+      caseName = optionValue.caseName;
+    }
+
+    // scan_select: 通过 optionDef.type 判断，处理 pipeline_override 中 attach 的占位符替换
+    if (optionDef.type === 'scan_select') {
       const scanSelectDef = optionDef as { pipeline_override?: Record<string, unknown> };
       if (scanSelectDef.pipeline_override) {
         const selectedValue = caseName || '';
@@ -142,7 +145,6 @@ const collectOptionOverrides = (
           selectedValue,
         );
         if (processedOverride) {
-          // 处理可能的数组结果（MaaFramework 支持 pipeline_override 为数组）
           if (Array.isArray(processedOverride)) {
             overrides.push(...processedOverride);
           } else {
@@ -151,11 +153,7 @@ const collectOptionOverrides = (
         }
       }
     } else {
-      caseName = (optionValue as { caseName: string }).caseName;
-    }
-
-    // select/switch 的 case pipeline_override 处理（scan_select 不走这里）
-    if (optionValue.type !== 'scan_select') {
+      // select/switch 的 case pipeline_override 处理
       const caseDef = optionDef.cases?.find((c) => c.name === caseName);
 
       if (caseDef?.pipeline_override) {

@@ -251,10 +251,6 @@ export type OptionValue =
   | {
       type: 'input';
       values: Record<string, string>;
-    }
-  | {
-      type: 'scan_select';
-      caseName: string;
     };
 
 // 保存的设备信息（运行时使用）

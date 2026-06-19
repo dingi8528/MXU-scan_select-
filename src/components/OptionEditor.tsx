@@ -390,7 +390,7 @@ export function OptionEditor({
     }
     if (optionDef.type === 'select' || optionDef.type === 'scan_select' || !optionDef.type) {
       const caseName =
-        (value?.type === 'select' || value?.type === 'scan_select')
+        value?.type === 'select'
           ? value.caseName
           : optionDef.default_case || optionDef.cases?.[0]?.name;
       return optionDef.cases?.find((c) => c.name === caseName);
@@ -607,9 +607,11 @@ export function OptionEditor({
     );
   }
 
-  // Select 类型 (默认)
+  // Select / scan_select 类型 (默认)
   const selectedCaseName =
-    value?.type === 'select' ? value.caseName : optionDef.default_case || optionDef.cases[0]?.name;
+    value?.type === 'select'
+      ? value.caseName
+      : optionDef.default_case || optionDef.cases[0]?.name;
 
   // 选项超过 4 个时使用 ComboBox（带搜索功能）
   const useComboBox = optionDef.cases.length > 4;
@@ -670,7 +672,7 @@ export function OptionEditor({
           onChange={(next) => {
             if (effectiveDisabled) return;
             setTaskOptionValue(instanceId, taskId, optionKey, {
-              type: optionDef.type === 'scan_select' ? 'scan_select' : 'select',
+              type: 'select',
               caseName: next,
             });
           }}

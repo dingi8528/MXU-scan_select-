@@ -579,8 +579,7 @@ export const useAppStore = create<AppState>()(
           // select / scan_select 类型
           const caseName =
             (optionDef.default_case as string | undefined) || optionDef.cases?.[0]?.name || '';
-          const valueType = optionDef.type === 'scan_select' ? 'scan_select' : 'select';
-          optionValues[optionKey] = { type: valueType, caseName };
+          optionValues[optionKey] = { type: 'select', caseName };
         }
       }
 
@@ -679,7 +678,7 @@ export const useAppStore = create<AppState>()(
                 const optDef = pi.option[optionKey];
                 if (
                   optDef &&
-                  (optDef.type === 'switch' || optDef.type === 'select' || !optDef.type) &&
+                  (optDef.type === 'switch' || optDef.type === 'select' || optDef.type === 'scan_select' || !optDef.type) &&
                   'cases' in optDef
                 ) {
                   let selectedCase;

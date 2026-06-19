@@ -28,8 +28,7 @@ export const createDefaultOptionValue = (optionDef: OptionDefinition): OptionVal
 
   // select / scan_select type (default)
   const defaultCase = optionDef.default_case || optionDef.cases[0]?.name || '';
-  const valueType = optionDef.type === 'scan_select' ? 'scan_select' : 'select';
-  return { type: valueType, caseName: defaultCase };
+  return { type: 'select', caseName: defaultCase };
 };
 
 export type OptionValueSanitizeLogger = (message: string) => void;
@@ -51,7 +50,9 @@ export const sanitizeOptionValue = (
   }
 
   const expectedType = optionDef.type || 'select';
-  if (value.type !== expectedType) {
+  // scan_select 在值层面复用 select 的类型
+  const normalizedExpectedType = expectedType === 'scan_select' ? 'select' : expectedType;
+  if (value.type !== normalizedExpectedType) {
     warn?.(
       `选项 "${optionKey}" 的类型已从 "${value.type}" 变更为 "${expectedType}"，已重置为默认值`,
     );
@@ -59,7 +60,7 @@ export const sanitizeOptionValue = (
   }
 
   if ((!optionDef.type || optionDef.type === 'select' || optionDef.type === 'scan_select') &&
-      (value.type === 'select' || value.type === 'scan_select')) {
+      value.type === 'select') {
     const caseExists = optionDef.cases.some((caseDef) => caseDef.name === value.caseName);
     if (!caseExists) {
       warn?.(`选项 "${optionKey}" 的 case "${value.caseName}" 已不存在，已重置为默认值`);
@@ -131,7 +132,7 @@ export const initializeAllOptionValues = (
         selectedCase = findSwitchCase(optDef.cases, isChecked);
       } else if ('cases' in optDef) {
         const caseName =
-          (currentValue.type === 'select' || currentValue.type === 'scan_select')
+          currentValue.type === 'select'
             ? currentValue.caseName
             : optDef.cases?.[0]?.name;
         selectedCase = optDef.cases?.find((c) => c.name === caseName);
@@ -174,8 +175,7 @@ export const convertPresetOptionValue = (
   }
 
   if ((!optDef.type || optDef.type === 'select' || optDef.type === 'scan_select') && typeof presetValue === 'string') {
-    const valueType = optDef.type === 'scan_select' ? 'scan_select' : 'select';
-    return { type: valueType, caseName: presetValue };
+    return { type: 'select', caseName: presetValue };
   }
 
   return null;

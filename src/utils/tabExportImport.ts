@@ -60,7 +60,6 @@ interface WirePayload {
 function encodeOptionValue(v: OptionValue): WireOptionValue {
   switch (v.type) {
     case 'select':
-    case 'scan_select':
       return { t: 's', c: v.caseName };
     case 'checkbox':
       return { t: 'cb', c: v.caseNames };

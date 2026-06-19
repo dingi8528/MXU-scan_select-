@@ -588,7 +588,7 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
           type: 'checkbox',
         });
       } else {
-        // select 类型（默认）
+        // select / scan_select 类型（默认）
         const caseName =
           optionValue?.type === 'select'
             ? optionValue.caseName
