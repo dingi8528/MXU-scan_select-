@@ -67,6 +67,9 @@ impl AppConfigState {
         // 处理 import 字段（将额外文件合并到主 interface）
         process_imports(&mut interface, exe_dir);
 
+        // 展开所有 scan_select 类型选项（扫描目录填充 cases）
+        expand_scan_select_options(&mut interface, exe_dir);
+
         // 加载翻译文件
         let translations = load_translations(&interface, exe_dir);
 
@@ -116,6 +119,73 @@ impl AppConfigState {
                 "language": "system"
             }
         });
+    }
+
+    /// 重新扫描指定的 scan_select 选项，更新内存中的 interface 并返回新 cases
+    /// 参照 MWU 的 rescan_scan_select_option
+    pub fn rescan_scan_select_option(
+        &self,
+        option_name: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut pi_guard = self
+            .project_interface
+            .lock()
+            .map_err(|e| format!("获取 interface 锁失败: {}", e))?;
+
+        let interface = pi_guard
+            .as_mut()
+            .ok_or_else(|| "interface.json 尚未加载".to_string())?;
+
+        let base_dir = self
+            .base_path
+            .lock()
+            .map_err(|e| format!("获取 base_path 锁失败: {}", e))?
+            .clone();
+
+        let option = interface
+            .get_mut("option")
+            .and_then(|v| v.as_object_mut())
+            .and_then(|opts| opts.get_mut(option_name))
+            .ok_or_else(|| format!("选项 {} 不存在", option_name))?;
+
+        let is_scan_select = option
+            .get("type")
+            .and_then(|v| v.as_str())
+            .map(|t| t == "scan_select")
+            .unwrap_or(false);
+
+        if !is_scan_select {
+            return Err(format!("选项 {} 不是 scan_select 类型", option_name));
+        }
+
+        let scan_dir = option
+            .get("scan_dir")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("选项 {} 缺少 scan_dir", option_name))?
+            .to_string();
+
+        let scan_filter = option
+            .get("scan_filter")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("选项 {} 缺少 scan_filter", option_name))?
+            .to_string();
+
+        let files = super::file_ops::scan_directory_impl(&base_dir, &scan_dir, &scan_filter)?;
+
+        let cases: Vec<serde_json::Value> = files
+            .iter()
+            .map(|f| serde_json::json!({ "name": f, "label": f }))
+            .collect();
+
+        option["cases"] = serde_json::Value::Array(cases.clone());
+
+        log::info!(
+            "scan_select 选项 {} 重新扫描完成，找到 {} 个匹配项",
+            option_name,
+            cases.len()
+        );
+
+        Ok(cases)
     }
 
     /// 保存配置到磁盘并更新内存
@@ -211,6 +281,26 @@ pub fn notify_config_changed(
 // 内部辅助函数
 // ============================================================================
 
+/// 重新扫描指定的 scan_select 选项（Tauri 命令，供前端调用）
+#[tauri::command]
+pub fn rescan_scan_select(
+    state: State<Arc<AppConfigState>>,
+    option_name: String,
+) -> Result<serde_json::Value, String> {
+    let option_name = option_name.trim().to_string();
+    if option_name.is_empty() {
+        return Err("option_name 不能为空".to_string());
+    }
+
+    let cases = state.rescan_scan_select_option(&option_name)?;
+
+    Ok(serde_json::json!({
+        "status": "success",
+        "option_name": option_name,
+        "cases": cases,
+    }))
+}
+
 fn make_config_filename(project_name: Option<&str>) -> String {
     match project_name {
         Some(name) => {
@@ -266,6 +356,63 @@ fn load_translations(
     }
 
     translations
+}
+
+/// 展开所有 scan_select 类型选项，扫描目录填充 cases（参照 MWU 的 _expand_scan_select_options）
+fn expand_scan_select_options(interface: &mut serde_json::Value, base_dir: &Path) {
+    let options = match interface.get_mut("option").and_then(|v| v.as_object_mut()) {
+        Some(opts) => opts,
+        None => return,
+    };
+
+    let base_dir_str = base_dir.to_string_lossy().to_string();
+
+    for (option_name, option_data) in options.iter_mut() {
+        let is_scan_select = option_data
+            .get("type")
+            .and_then(|v| v.as_str())
+            .map(|t| t == "scan_select")
+            .unwrap_or(false);
+
+        if !is_scan_select {
+            continue;
+        }
+
+        let scan_dir = match option_data.get("scan_dir").and_then(|v| v.as_str()) {
+            Some(s) if !s.is_empty() => s.to_string(),
+            _ => {
+                log::warn!("scan_select 选项 {} 的 scan_dir 为空，跳过", option_name);
+                continue;
+            }
+        };
+
+        let scan_filter = match option_data.get("scan_filter").and_then(|v| v.as_str()) {
+            Some(s) if !s.is_empty() => s.to_string(),
+            _ => {
+                log::warn!("scan_select 选项 {} 的 scan_filter 为空，跳过", option_name);
+                continue;
+            }
+        };
+
+        match super::file_ops::scan_directory_impl(&base_dir_str, &scan_dir, &scan_filter) {
+            Ok(files) => {
+                let cases: Vec<serde_json::Value> = files
+                    .iter()
+                    .map(|f| serde_json::json!({ "name": f, "label": f }))
+                    .collect();
+                log::info!(
+                    "scan_select 选项 {} 扫描完成，找到 {} 个匹配项",
+                    option_name,
+                    cases.len()
+                );
+                option_data["cases"] = serde_json::Value::Array(cases);
+            }
+            Err(e) => {
+                log::error!("scan_select 选项 {} 扫描失败: {}", option_name, e);
+                option_data["cases"] = serde_json::Value::Array(vec![]);
+            }
+        }
+    }
 }
 
 /// 处理 interface.json 中的 `import` 字段，将额外文件合并到主 interface

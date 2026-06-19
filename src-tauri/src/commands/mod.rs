@@ -39,3 +39,4 @@ pub use utils::get_maafw_dir;
 pub use file_ops::get_data_dir;
 pub use file_ops::get_exe_dir;
 pub use file_ops::scan_directory;
+pub use app_config::rescan_scan_select;

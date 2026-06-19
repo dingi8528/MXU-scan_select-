@@ -267,6 +267,16 @@ export const useAppStore = create<AppState>()(
     basePath: '.',
     dataPath: '.',
     setProjectInterface: (pi) => set({ projectInterface: pi }),
+    updateScanSelectCases: (optionKey, cases) => {
+      const pi = get().projectInterface;
+      if (!pi?.option?.[optionKey]) return;
+
+      // 不可变更新，触发 Zustand 重渲染
+      const updatedOption = { ...pi.option[optionKey], cases } as OptionDefinition;
+      const updatedOptions = { ...pi.option, [optionKey]: updatedOption };
+      const updatedPi = { ...pi, option: updatedOptions };
+      set({ projectInterface: updatedPi });
+    },
     setInterfaceTranslations: (lang, translations) =>
       set((state) => ({
         interfaceTranslations: {

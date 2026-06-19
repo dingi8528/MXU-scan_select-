@@ -4,6 +4,7 @@ import type {
   OptionValue,
   SavedDeviceInfo,
   ActionConfig,
+  CaseItem,
 } from '@/types/interface';
 import type {
   MxuConfig,
@@ -127,6 +128,7 @@ export interface AppState {
   basePath: string; // exe 所在目录（资源路径）
   dataPath: string; // 数据目录（macOS: ~/Library/Application Support/MXU/，其他平台同 basePath）
   setProjectInterface: (pi: ProjectInterface) => void;
+  updateScanSelectCases: (optionKey: string, cases: CaseItem[]) => void;
   setInterfaceTranslations: (lang: string, translations: Record<string, string>) => void;
   setBasePath: (path: string) => void;
   setDataPath: (path: string) => void;

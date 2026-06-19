@@ -285,6 +285,11 @@ pub async fn start_web_server(
             "/system/restart-as-admin",
             axum::routing::post(handle_restart_as_admin),
         )
+        // scan_select 重新扫描
+        .route(
+            "/interface/scan-select/rescan",
+            axum::routing::post(handle_rescan_scan_select),
+        )
         // 本地文件代理（浏览器通过此端点访问 exe 目录下的资源文件）
         .route("/local-file", get(handle_serve_local_file))
         .with_state(state);
@@ -1221,6 +1226,47 @@ async fn handle_serve_local_file(
             (StatusCode::OK, [(header::CONTENT_TYPE, content_type)], data).into_response()
         }
         Err(_) => (StatusCode::NOT_FOUND, "文件不存在").into_response(),
+    }
+}
+
+/// POST /api/interface/scan-select/rescan
+/// 重新扫描指定的 scan_select 选项，参照 MWU 的 rescan_scan_select
+async fn handle_rescan_scan_select(
+    State(state): State<WebState>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    let option_name = match body.get("option_name").and_then(|v| v.as_str()) {
+        Some(name) if !name.trim().is_empty() => name.trim().to_string(),
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({
+                    "status": "failed",
+                    "message": "option_name 不能为空"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    match state.app_config.rescan_scan_select_option(&option_name) {
+        Ok(cases) => Json(serde_json::json!({
+            "status": "success",
+            "option_name": option_name,
+            "cases": cases,
+        }))
+        .into_response(),
+        Err(e) => {
+            log::warn!("重扫 scan_select 失败: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "status": "failed",
+                    "message": e,
+                })),
+            )
+                .into_response()
+        }
     }
 }
 

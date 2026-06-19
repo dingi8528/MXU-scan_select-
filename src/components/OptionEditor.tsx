@@ -11,6 +11,7 @@ import { findSwitchCase } from '@/utils/optionHelpers';
 import { SwitchButton, TextInput, FileInput, TimeInput } from './FormControls';
 import { Tooltip } from './ui/Tooltip';
 import { rescanScanSelectOption } from '@/services/interfaceLoader';
+import { loggers } from '@/utils/logger';
 
 /** 判断 switch 类型的选项是否有子选项 */
 export function switchHasNestedOptions(optionDef: OptionDefinition): boolean {
@@ -625,8 +626,11 @@ export function OptionEditor({
     if (isRefreshing || !projectInterface) return;
     setIsRefreshing(true);
     try {
-      await rescanScanSelectOption(projectInterface, basePath, optionKey);
-      // 可选：触发界面更新
+      const newCases = await rescanScanSelectOption(projectInterface, basePath, optionKey);
+      // 通过 Zustand 不可变更新触发重渲染
+      useAppStore.getState().updateScanSelectCases(optionKey, newCases);
+    } catch (error) {
+      loggers.app.error('scan_select 重扫失败:', error);
     } finally {
       setIsRefreshing(false);
     }

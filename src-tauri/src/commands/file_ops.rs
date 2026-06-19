@@ -772,13 +772,12 @@ fn parse_export_timestamp(dir_name: &str) -> Option<String> {
     Some(std::str::from_utf8(tail).ok()?.to_string())
 }
 
-/// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表
-#[tauri::command]
-pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -> Result<Vec<String>, String> {
+/// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表（核心实现，供其他模块调用）
+pub fn scan_directory_impl(base_dir: &str, scan_dir: &str, scan_filter: &str) -> Result<Vec<String>, String> {
     use std::path::Path;
 
-    let base_path = Path::new(&base_dir);
-    let full_scan_dir = base_path.join(&scan_dir);
+    let base_path = Path::new(base_dir);
+    let full_scan_dir = base_path.join(scan_dir);
 
     // 规范化路径进行安全检查
     let resolved = full_scan_dir.canonicalize()
@@ -798,12 +797,18 @@ pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -
     let mut matched_files = Vec::new();
 
     // 使用 glob 匹配文件
-    for entry in walkdir(&resolved, &scan_filter)? {
+    for entry in walkdir(&resolved, scan_filter)? {
         matched_files.push(entry);
     };
 
     matched_files.sort();
     Ok(matched_files)
+}
+
+/// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表（Tauri 命令）
+#[tauri::command]
+pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -> Result<Vec<String>, String> {
+    scan_directory_impl(&base_dir, &scan_dir, &scan_filter)
 }
 
 fn walkdir(dir: &Path, filter: &str) -> Result<Vec<String>, String> {
