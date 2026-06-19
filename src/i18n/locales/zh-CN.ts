@@ -290,6 +290,10 @@ export default {
     useCmd: '通过 cmd 启动',
     useCmdHint:
       '启用时通过 cmd /c 启动程序，使其脱离当前进程树。一些游戏可能会检测进程树（仅 Windows 生效）',
+    startupDelay: '启动延迟',
+    startupDelayHint: '执行完成后等待指定秒数再继续，用于等待模拟器等程序完全启动',
+    startupDelaySuffix: '秒',
+    startupDelayCountdown: '前置程序 {{name}} 执行完成，等待 {{seconds}} 秒...',
     preActionSkipped: '前置程序 {{name}} 已在运行，跳过执行',
     waitingForDevice: '正在等待设备就绪...',
     waitingForWindow: '正在等待窗口就绪...',

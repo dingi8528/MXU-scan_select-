@@ -9,7 +9,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { buildListItemMenuItems, InlineNameEditor } from './listItemShared';
 import type { ActionConfig } from '@/types/interface';
 import clsx from 'clsx';
-import { FileField, TextField, SwitchField } from './FormControls';
+import { FileField, TextField, SwitchField, NumberField } from './FormControls';
 
 interface ActionItemProps {
   instanceId: string;
@@ -27,6 +27,7 @@ const defaultValues: Omit<ActionConfig, 'id'> = {
   waitForExit: false,
   skipIfRunning: true,
   useCmd: false,
+  startupDelay: 0,
 };
 
 /** 参数预览标签 */
@@ -363,6 +364,16 @@ export function ActionItem({
                 disabled={disabled}
               />
             )}
+            <NumberField
+              label={t('action.startupDelay')}
+              hint={t('action.startupDelayHint')}
+              value={currentAction.startupDelay ?? 0}
+              onChange={(v) => updateAction({ startupDelay: v })}
+              min={0}
+              max={300}
+              suffix={t('action.startupDelaySuffix')}
+              disabled={disabled}
+            />
           </div>
         </div>
       </div>

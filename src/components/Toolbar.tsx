@@ -404,6 +404,19 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
                   message: t('action.preActionCompletedNamed', { name: processName }),
                 });
               }
+
+              // 前置程序配置了启动延迟时，执行倒计时等待
+              const delay = preAction.startupDelay ?? 0;
+              if (delay > 0) {
+                log.info(
+                  `实例 ${targetInstance.name}: 前置程序 ${processName} 执行后等待 ${delay} 秒...`,
+                );
+                addLog(targetId, {
+                  type: 'info',
+                  message: t('action.startupDelayCountdown', { name: processName, seconds: delay }),
+                });
+                await waitWithStopCheck(delay * 1000, targetId);
+              }
             }
 
             // 所有前置程序执行完毕后，等待设备/窗口就绪再连接

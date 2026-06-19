@@ -291,6 +291,10 @@ export default {
     useCmd: 'cmd로 실행',
     useCmdHint:
       '활성화하면 cmd /c로 프로그램을 실행하여 현재 프로세스 트리에서 분리합니다. 일부 게임은 프로세스 트리를 감지할 수 있습니다 (Windows 전용)',
+    startupDelay: '시작 지연',
+    startupDelayHint: '실행 완료 후 지정된 초 동안 대기한 후 계속합니다. 에뮬레이터 등의 완전한 시작을 기다리는 데 유용합니다',
+    startupDelaySuffix: '초',
+    startupDelayCountdown: '전처리 프로그램 {{name}} 완료, {{seconds}}초 대기 중...',
     preActionSkipped: '전처리 프로그램 {{name}} 이(가) 실행 중이므로 건너뜁니다',
     waitingForDevice: '장치 준비 대기 중...',
     waitingForWindow: '윈도우 준비 대기 중...',

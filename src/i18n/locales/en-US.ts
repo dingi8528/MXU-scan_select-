@@ -299,6 +299,10 @@ export default {
     useCmd: 'Launch via cmd',
     useCmdHint:
       'When enabled, launches the program via cmd /c to detach from the current process tree. Some games may detect the process tree (Windows only)',
+    startupDelay: 'Startup Delay',
+    startupDelayHint: 'Wait the specified seconds after execution before continuing, useful for waiting for emulators to fully start',
+    startupDelaySuffix: 'sec',
+    startupDelayCountdown: 'Pre-program {{name}} completed, waiting {{seconds}} seconds...',
     preActionSkipped: 'Pre-program {{name}} is already running, skipped',
     waitingForDevice: 'Waiting for device to be ready...',
     waitingForWindow: 'Waiting for window to be ready...',

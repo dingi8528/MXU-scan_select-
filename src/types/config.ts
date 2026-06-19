@@ -45,6 +45,7 @@ export interface LegacyActionConfig {
   waitForExit: boolean;
   skipIfRunning: boolean;
   useCmd: boolean;
+  startupDelay?: number;
 }
 
 // 保存的实例配置

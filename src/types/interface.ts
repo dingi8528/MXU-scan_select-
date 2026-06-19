@@ -282,6 +282,7 @@ export interface ActionConfig {
   waitForExit: boolean; // 是否等待进程退出（默认 true）
   skipIfRunning: boolean; // 程序已运行时跳过执行（默认 true）
   useCmd: boolean; // 通过 cmd /c 启动（仅 Windows，默认 false）
+  startupDelay?: number; // 执行后等待的秒数（用于等待模拟器启动，默认 0）
 }
 
 // 多开实例状态

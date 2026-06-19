@@ -286,6 +286,10 @@ export default {
     useCmd: '透過 cmd 啟動',
     useCmdHint:
       '啟用時透過 cmd /c 啟動程式，使其脫離當前進程樹。一些遊戲可能會檢測進程樹（僅 Windows 生效）',
+    startupDelay: '啟動延遲',
+    startupDelayHint: '執行完成後等待指定秒數再繼續，用於等待模擬器等程式完全啟動',
+    startupDelaySuffix: '秒',
+    startupDelayCountdown: '前置程式 {{name}} 執行完成，等待 {{seconds}} 秒...',
     preActionSkipped: '前置程式 {{name}} 已在運行，跳過執行',
     waitingForDevice: '正在等待裝置就緒...',
     waitingForWindow: '正在等待視窗就緒...',

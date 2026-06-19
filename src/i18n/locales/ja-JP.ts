@@ -293,6 +293,10 @@ export default {
     useCmd: 'cmd で起動',
     useCmdHint:
       '有効にすると cmd /c でプログラムを起動し、現在のプロセスツリーから切り離します。一部のゲームはプロセスツリーを検出する場合があります（Windows のみ）',
+    startupDelay: '起動遅延',
+    startupDelayHint: '実行完了後、指定した秒数だけ待機してから続行します。エミュレータなどの完全起動を待つのに便利です',
+    startupDelaySuffix: '秒',
+    startupDelayCountdown: '前処理プログラム {{name}} 完了、{{seconds}} 秒待機中...',
     preActionSkipped: '前処理プログラム {{name}} は実行中のためスキップしました',
     waitingForDevice: 'デバイスの準備を待機中...',
     waitingForWindow: 'ウィンドウの準備を待機中...',
