@@ -576,10 +576,11 @@ export const useAppStore = create<AppState>()(
           const defaultCases = optionDef.default_case || [];
           optionValues[optionKey] = { type: 'checkbox', caseNames: [...defaultCases] };
         } else {
-          // select 类型
+          // select / scan_select 类型
           const caseName =
             (optionDef.default_case as string | undefined) || optionDef.cases?.[0]?.name || '';
-          optionValues[optionKey] = { type: 'select', caseName };
+          const valueType = optionDef.type === 'scan_select' ? 'scan_select' : 'select';
+          optionValues[optionKey] = { type: valueType, caseName };
         }
       }
 

@@ -390,7 +390,7 @@ export function OptionEditor({
     }
     if (optionDef.type === 'select' || optionDef.type === 'scan_select' || !optionDef.type) {
       const caseName =
-        value?.type === 'select'
+        (value?.type === 'select' || value?.type === 'scan_select')
           ? value.caseName
           : optionDef.default_case || optionDef.cases?.[0]?.name;
       return optionDef.cases?.find((c) => c.name === caseName);
@@ -670,7 +670,7 @@ export function OptionEditor({
           onChange={(next) => {
             if (effectiveDisabled) return;
             setTaskOptionValue(instanceId, taskId, optionKey, {
-              type: 'select',
+              type: optionDef.type === 'scan_select' ? 'scan_select' : 'select',
               caseName: next,
             });
           }}

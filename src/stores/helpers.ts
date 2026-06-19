@@ -173,8 +173,9 @@ export const convertPresetOptionValue = (
     return { type: 'input', values: presetValue as Record<string, string> };
   }
 
-  if ((!optDef.type || optDef.type === 'select') && typeof presetValue === 'string') {
-    return { type: 'select', caseName: presetValue };
+  if ((!optDef.type || optDef.type === 'select' || optDef.type === 'scan_select') && typeof presetValue === 'string') {
+    const valueType = optDef.type === 'scan_select' ? 'scan_select' : 'select';
+    return { type: valueType, caseName: presetValue };
   }
 
   return null;
