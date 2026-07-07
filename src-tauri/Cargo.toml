@@ -50,8 +50,6 @@ notify-rust = "4"
 shell-words = "1.1.1"
 maa-framework = { version = "1", features = ["dynamic"] }
 rust-embed = "8"
-clap = { version = "4", features = ["derive"] }
-glob = "0.3"
 
 [profile.release]
 # 保留调试符号以生成 PDB 文件，便于崩溃分析

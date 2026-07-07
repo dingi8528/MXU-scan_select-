@@ -509,6 +509,9 @@ export async function autoLoadInterface(): Promise<LoadResult> {
     // scan_select: 由后端处理，调用 Tauri 命令获取扫描结果
     await expandScanSelectViaTauri(pi);
 
+    // scan_select: 由后端处理，调用 Tauri 命令获取扫描结果
+    await expandScanSelectViaTauri(pi);
+
     const translations = await loadTranslationsFromLocal(pi, relativeBasePath);
     return { interface: pi, translations, basePath, dataPath, backendOS, backendArch };
   }
