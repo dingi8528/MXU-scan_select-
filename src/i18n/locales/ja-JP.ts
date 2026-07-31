@@ -49,6 +49,8 @@ export default {
     appearance: '外観',
     hotkeys: 'ショートカットキー',
     general: '一般',
+    taskSettings: 'タスク設定',
+    taskSettingsEmpty: '表示できる設定項目がありません',
     language: '言語',
     backgroundImage: '背景画像',
     backgroundOpacity: '背景の不透明度',
@@ -95,6 +97,10 @@ export default {
     hotkeysGlobal: 'グローバルショートカット',
     hotkeysGlobalHint: 'ウィンドウ非アクティブ時もショートカットを有効にする',
     hotkeysGlobalOnlyStart: 'グローバルモードでは開始のみ有効',
+    hotkeysGlobalConflict:
+      'ショートカット {{combo}} は既に使用されているため、グローバルショートカットは現在無効です。別のキーに変更するか、他のプログラムや重複起動したインスタンスが占有していないか確認してください。',
+    hotkeysGlobalRegisterFailed:
+      'グローバルショートカット {{combo}} の登録に失敗しました：{{error}}',
     minimizeToTray: '閉じる時にトレイに最小化',
     minimizeToTrayHint: '閉じるボタンをクリックすると、終了せずにシステムトレイに隠れます',
     autoStart: 'スタートアップ時に起動',
@@ -110,6 +116,10 @@ export default {
       '手動でアプリを開く際も、上で選択した設定を自動実行します（無効な場合はシステム起動時のみ実行）',
     confirmBeforeDelete: '削除操作の前に確認する',
     confirmBeforeDeleteHint: '削除/一覧クリア等の危険な操作の前に確認ダイアログを表示します',
+    helpImproveSoftware: 'ソフトウェアの改善に協力',
+    helpImproveSoftwareHint:
+      'クラッシュとタスク統計を匿名で送信し、よくある問題の発見に役立てます。',
+    helpImproveSoftwareDisabledHint: 'デバッグ / 開発版のため、匿名データ送信は無効になっています',
     maxLogsPerInstance: 'インスタンスあたりのログ上限',
     maxLogsPerInstanceHint: '上限を超えると古いログから自動的に破棄します（推奨 500～2000）',
     resetWindowLayout: 'ウィンドウレイアウトをリセット',
@@ -226,7 +236,13 @@ export default {
         'ウィンドウが未設定のため、「{{name}}」を自動的に選択しました。変更する場合は接続設定で手動選択してください。次回以降は選択内容が保存されます。',
       resourceFailed: 'リソースの読み込みに失敗しました',
       startFailed: 'タスクの開始に失敗しました',
+      workstationLocked:
+        'パソコンがロック画面の状態です。ロックを解除してからタスクを実行してください',
       agentStartParams: 'Agent #{{index}} 起動パラメータ: {{cmd}}  (作業ディレクトリ: {{cwd}})',
+      agentSpawnHintFileNotFound:
+        'Agent がセキュリティソフトにブロックされていないか確認し、問題なければ上書き再インストールしてください。',
+      agentSpawnHintAppControl:
+        '「Windows セキュリティ → アプリとブラウザー制御 → スマート アプリ コントロール」でこの機能をオフにしてから再試行してください。',
       needConfig:
         'まずデバイスを接続してリソースを読み込むか、接続パネルでデバイス設定を保存してください',
     },
@@ -316,6 +332,10 @@ export default {
     preActionCompletedNamed: '前処理プログラム {{name}} 完了',
     preActionFailed: '前処理プログラム失敗: {{error}}',
     preActionExitCode: '前処理プログラム終了コード: {{code}}',
+    pretaskStarting: '事前タスクを実行中: {{name}}',
+    pretaskCompleted: '事前タスクが完了しました: {{name}}',
+    pretaskExitCode: '事前タスク終了コード: {{code}}',
+    pretaskFailed: '事前タスクの実行に失敗しました: {{error}}',
     preActionConnectDelay: '{{seconds}} 秒後に接続します...',
     autoPreActionName: '▶️ {{name}} を起動',
     autoPreActionAdded: '前処理プログラムを自動追加しました: {{name}}（デフォルトでは無効）',
@@ -333,6 +353,8 @@ export default {
     noMatchingOptions: '一致するオプションがありません',
     incompatibleController: '現在のコントローラーに対応していません',
     incompatibleResource: '現在のリソースパックに対応していません',
+    hotkeyPlaceholder: 'クリックしてショートカットを記録',
+    hotkeyCapturing: 'キーを押してください...',
   },
 
   // プリセット
@@ -365,6 +387,17 @@ export default {
     win32: 'Windows ウィンドウ',
     wlroots: 'WlRoots (Linux)',
     playcover: 'PlayCover (macOS)',
+    macos: 'macOS ウィンドウ',
+    macosPermissionsRequired:
+      '画面収録とアクセシビリティの権限が必要です。macOSの「システム設定」>「プライバシーとセキュリティ」で許可してから、もう一度お試しください。',
+    macosUnsupportedPlatform:
+      'macOS ネイティブウィンドウコントローラーは macOS でのみ使用できます。',
+    macosVersionRequired:
+      'macOS ネイティブウィンドウコントローラーには MaaFramework v5.10.0-beta.1 以降が必要です。',
+    macosSystemVersionRequired:
+      'macOS ネイティブウィンドウコントローラーには macOS 14.0 以降が必要です。',
+    macosSystemVersionDetectionFailed:
+      '現在の macOS バージョンを判定できませんでした。詳細はログを確認してください。',
     gamepad: 'ゲームパッド',
     connecting: '接続中...',
     connected: '接続済み',
@@ -458,6 +491,8 @@ export default {
       loadingResource: 'リソースを読み込み中: {{name}}',
       resourceLoaded: 'リソースを読み込みました: {{name}}',
       resourceFailed: 'リソースの読み込みに失敗しました: {{name}}',
+      resourceFailedHint:
+        '該当リソースのディレクトリを削除してから上書き再インストールをお試しください。',
       // タスクメッセージ
       taskStarting: 'タスクを開始: {{name}}',
       taskSucceeded: 'タスクが完了しました: {{name}}',
@@ -493,6 +528,7 @@ export default {
     noResults: '一致するタスクが見つかりません',
     alreadyAdded: '追加済み',
     specialTasks: '特殊タスク',
+    pretasks: '事前タスク',
     allSpecialTasksAdded: 'すべて追加済み',
     collapse: 'パネルを閉じる',
     ungroupedTasks: 'その他',
@@ -563,6 +599,7 @@ export default {
   // ウェルカムダイアログ
   welcome: {
     dismiss: '了解しました',
+    viewAgain: 'ウェルカムメッセージを表示',
   },
 
   // 新規ユーザーガイド

@@ -6,7 +6,10 @@ import type {
   ControllerType,
   PresetItem,
   GroupItem,
+  InterfaceSettingSection,
+  PretaskItem,
 } from '@/types/interface';
+import { normalizePretaskConfigs } from '@/types/interface';
 import { loggers } from '@/utils/logger';
 import { parseJsonc } from '@/utils/jsonc';
 import { isTauri } from '@/utils/paths';
@@ -15,15 +18,21 @@ import { setBackendPort, apiPost } from '@/utils/backendApi';
 const log = loggers.app;
 
 /**
- * 可导入的 PI 文件结构（支持 task、option、preset 和 group 字段）
+ * 可导入的 PI 文件结构（支持 task、option、global_option、preset、group、setting 和 pretask 字段）
  */
 interface ImportableInterface {
   task?: TaskItem[];
   option?: Record<string, OptionDefinition>;
+  /** v2.3.0: 支持导入 global_option */
+  global_option?: string[];
   /** v2.3.0: 支持导入 preset */
   preset?: PresetItem[];
   /** v2.4.0: 支持导入 group */
   group?: GroupItem[];
+  /** MXU 扩展：支持导入 setting */
+  setting?: InterfaceSettingSection[];
+  /** v2.7.0: 支持导入 pretask */
+  pretask?: PretaskItem | PretaskItem[];
 }
 
 export interface LoadResult {
@@ -214,7 +223,7 @@ async function loadImportFromHttp(importPath: string): Promise<ImportableInterfa
 }
 
 /**
- * 合并导入的 task 和 option 到主 interface
+ * 合并导入的 task、option、setting、pretask 等到主 interface
  * @param pi 主 ProjectInterface
  * @param imported 导入的内容
  */
@@ -225,10 +234,32 @@ function mergeImported(pi: ProjectInterface, imported: ImportableInterface): voi
     log.info(`合并了 ${imported.task.length} 个导入的 task`);
   }
 
+  // 合并 global_option（按导入顺序追加并去重）
+  if (imported.global_option && imported.global_option.length > 0) {
+    const existingGlobalOptions = pi.global_option || [];
+    const seen = new Set(existingGlobalOptions);
+    const dedupedImported = imported.global_option.filter((optionKey) => {
+      if (seen.has(optionKey)) return false;
+      seen.add(optionKey);
+      return true;
+    });
+
+    if (dedupedImported.length > 0) {
+      pi.global_option = [...existingGlobalOptions, ...dedupedImported];
+      log.info(`合并了 ${dedupedImported.length} 个导入的 global_option`);
+    }
+  }
+
   // 合并 option 对象（后导入的覆盖先导入的）
   if (imported.option && Object.keys(imported.option).length > 0) {
     pi.option = { ...pi.option, ...imported.option };
     log.info(`合并了 ${Object.keys(imported.option).length} 个导入的 option`);
+  }
+
+  // MXU 扩展：合并 setting 数组（追加到末尾，保持导入顺序）
+  if (imported.setting && imported.setting.length > 0) {
+    pi.setting = [...(pi.setting || []), ...imported.setting];
+    log.info(`合并了 ${imported.setting.length} 个导入的 setting`);
   }
 
   // v2.3.0: 合并 preset 数组（追加到末尾）
@@ -265,6 +296,14 @@ function mergeImported(pi: ProjectInterface, imported: ImportableInterface): voi
         `忽略了 ${skippedDuplicates} 个重名 group，名称包括: ${uniqueDuplicateNames.join(', ')}`,
       );
     }
+  }
+
+  // v2.7.0: 合并 pretask（单对象视为一项，按导入顺序追加为有序列表）
+  const importedPretasks = normalizePretaskConfigs(imported.pretask);
+  if (importedPretasks && importedPretasks.length > 0) {
+    const existing = normalizePretaskConfigs(pi.pretask) || [];
+    pi.pretask = [...existing, ...importedPretasks];
+    log.info(`合并了 ${importedPretasks.length} 个导入的 pretask`);
   }
 }
 
@@ -420,8 +459,9 @@ function getUnsupportedControllerTypes(os: string): Set<ControllerType> {
     unsupported.add('Win32');
     unsupported.add('Gamepad');
   }
-  // 非 macOS 系统不支持 PlayCover
+  // 非 macOS 系统不支持原生 macOS 控制器和 PlayCover
   if (!isMacOS) {
+    unsupported.add('MacOS');
     unsupported.add('PlayCover');
   }
   // 非 Linux 系统不支持 WlRoots

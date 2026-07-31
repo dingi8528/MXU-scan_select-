@@ -170,6 +170,29 @@ pub fn is_elevated() -> bool {
     }
 }
 
+/// 检查当前 Windows 工作站是否处于锁屏状态（仅 Windows 生效，其他平台恒为 false）
+///
+/// 原理：锁屏时输入桌面会切换到 Winlogon 安全桌面，普通用户进程无法打开该桌面，
+/// `OpenInputDesktop` 返回 Err；未锁屏时可正常打开 "Default" 输入桌面。
+#[tauri::command]
+pub fn is_workstation_locked() -> bool {
+    #[cfg(windows)]
+    {
+        use winsafe::co::DESKTOP_RIGHTS;
+        use winsafe::HDESK;
+
+        match HDESK::OpenInputDesktop(None, false, DESKTOP_RIGHTS::READOBJECTS) {
+            Ok(_) => false,
+            Err(_) => true,
+        }
+    }
+
+    #[cfg(not(windows))]
+    {
+        false
+    }
+}
+
 /// 以管理员权限重启应用
 #[tauri::command]
 pub fn restart_as_admin(app_handle: tauri::AppHandle) -> Result<(), String> {
@@ -606,6 +629,82 @@ pub async fn run_action(
 
         info!("run_action spawned (not waiting)");
         Ok(0) // 不等待时返回 0
+    }
+}
+
+/// 执行 PI v2.7.0 pretask（预任务）外部程序，在连接 Controller 前调用。
+///
+/// 与 `run_action` 不同：`args` 直接以数组形式传入，不做 shell 分词，从而完整保留
+/// 由 option 序列化得到的单行紧凑 JSON 参数（含引号、花括号）。始终等待进程退出，
+/// 并复用 `pre_action_stop_requests` 支持前置阶段的取消。
+#[tauri::command]
+pub async fn run_pretask(
+    state: State<'_, Arc<MaaState>>,
+    instance_id: String,
+    program: String,
+    args: Vec<String>,
+    cwd: Option<String>,
+) -> Result<i32, String> {
+    info!(
+        "run_pretask: instance_id={}, program={}, args={:?}, cwd={:?}",
+        instance_id, program, args, cwd
+    );
+
+    // Windows 下相对可执行路径会相对“父进程当前目录”解析，而非下方设置的 `current_dir`，
+    // 因此必须先基于 cwd 把相对 exec（如 `agent/go-service`）拼成绝对路径，复用 Agent
+    // 启动时相同的解析逻辑，避免出现“系统找不到指定的路径 (os error 3)”。
+    let resolved_program = match cwd {
+        Some(ref dir) => super::maa_agent::resolve_child_exec_path(&program, dir)
+            .to_string_lossy()
+            .into_owned(),
+        None => program.clone(),
+    };
+
+    let mut cmd = super::utils::build_launch_command(&resolved_program, &args, false);
+
+    // 设置工作目录
+    if let Some(ref dir) = cwd {
+        cmd.current_dir(dir);
+    } else if let Some(parent) = std::path::Path::new(&program).parent() {
+        if parent.exists() {
+            cmd.current_dir(parent);
+        }
+    }
+
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to run pretask: {} - {}", program, e))?;
+
+    loop {
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|e| format!("Failed to wait pretask: {} - {}", program, e))?
+        {
+            let exit_code = status.code().unwrap_or(-1);
+            info!("run_pretask finished with exit code: {}", exit_code);
+            return Ok(exit_code);
+        }
+
+        let stop_requested = {
+            let requests = state
+                .pre_action_stop_requests
+                .lock()
+                .map_err(|e| e.to_string())?;
+            requests.contains(&instance_id)
+        };
+
+        if stop_requested {
+            info!(
+                "run_pretask wait cancelled by stop request: {}",
+                instance_id
+            );
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
+            return Err("MXU_PRE_ACTION_CANCELLED".to_string());
+        }
+
+        sleep(Duration::from_millis(100)).await;
     }
 }
 

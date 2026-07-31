@@ -86,6 +86,9 @@ pub fn run() {
                 }
             }
 
+            // 尽早初始化遥测，使后续启动流程中的崩溃也能上报
+            commands::telemetry::init_at_startup(&app_config);
+
             // 先注册共享状态，再启动依赖这些状态的后台任务，避免启动竞态
             app.manage(ws_broadcast.clone());
             app.manage(app_config.clone());
@@ -280,6 +283,7 @@ pub fn run() {
             commands::download::cancel_download,
             // 系统相关命令
             commands::system::is_elevated,
+            commands::system::is_workstation_locked,
             commands::system::is_autostart,
             commands::system::get_start_instance,
             commands::system::has_quit_after_run_flag,
@@ -289,6 +293,7 @@ pub fn run() {
             commands::system::run_and_wait,
             commands::system::set_pre_action_stop,
             commands::system::run_action,
+            commands::system::run_pretask,
             commands::system::is_process_running,
             commands::system::get_process_path_from_hwnd,
             commands::system::retry_load_maa_library,
@@ -310,6 +315,9 @@ pub fn run() {
             // 配置同步命令（WebUI 实时同步）
             commands::app_config::notify_config_changed,
             commands::app_config::rescan_scan_select,
+            // 匿名遥测命令
+            commands::telemetry::telemetry_init,
+            commands::telemetry::telemetry_set_enabled,
         ])
         .on_window_event(|window, event| {
             match event {
@@ -328,6 +336,12 @@ pub fn run() {
                 _ => {}
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| {
+            // 退出前收尾遥测（结束 Session 与悬挂 Transaction 并 flush）
+            if matches!(event, tauri::RunEvent::Exit) {
+                commands::telemetry::on_app_exit();
+            }
+        });
 }

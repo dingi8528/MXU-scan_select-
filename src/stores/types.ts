@@ -84,6 +84,16 @@ export interface JustUpdatedInfo {
   channel?: string;
 }
 
+// 全局快捷键注册失败信息
+export interface GlobalHotkeyError {
+  /** 注册失败的快捷键组合（如 Ctrl+F12） */
+  combo: string;
+  /** 是否为按键被其他程序占用导致的冲突 */
+  conflict: boolean;
+  /** 原始错误信息 */
+  message: string;
+}
+
 export interface AppState {
   // 配置持久化保护（防止启动早期空状态覆盖用户配置）
   configPersistenceReady: boolean;
@@ -100,6 +110,8 @@ export interface AppState {
   /** 每个实例最多保留的日志条数（超出自动丢弃最旧的） */
   maxLogsPerInstance: number;
   autoClearLogsOnLaunch: boolean;
+  /** 是否开启匿名遥测（帮助改进软件），默认 true；调试 / 开发版本强制关闭 */
+  helpImproveSoftware: boolean;
   customAccents: CustomAccent[];
   setTheme: (theme: Theme) => void;
   setAccentColor: (accent: AccentColor) => void;
@@ -109,6 +121,7 @@ export interface AppState {
   setConfirmBeforeDelete: (enabled: boolean) => void;
   setMaxLogsPerInstance: (value: number) => void;
   setAutoClearLogsOnLaunch: (enabled: boolean) => void;
+  setHelpImproveSoftware: (enabled: boolean) => void;
   addCustomAccent: (accent: CustomAccent) => void;
   updateCustomAccent: (id: string, accent: CustomAccent) => void;
   removeCustomAccent: (id: string) => void;
@@ -151,6 +164,7 @@ export interface AppState {
   addTaskToInstance: (
     instanceId: string,
     task: { name: string; option?: string[]; description?: string },
+    options?: { prepend?: boolean },
   ) => void;
   /** v2.3.0: 应用预设配置到实例 */
   applyPreset: (instanceId: string, presetName: string) => void;
@@ -186,6 +200,9 @@ export interface AppState {
     optionKey: string,
     value: OptionValue,
   ) => void;
+  /** 全局任务设置值（对应 interface.global_option），跨实例/配置共享 */
+  globalOptionValues: Record<string, OptionValue>;
+  setGlobalOptionValue: (optionKey: string, value: OptionValue) => void;
   selectAllTasks: (instanceId: string, enabled: boolean) => void;
   collapseAllTasks: (instanceId: string, expanded: boolean) => void;
   renameTask: (instanceId: string, taskId: string, newName: string) => void;
@@ -350,6 +367,10 @@ export interface AppState {
   // 快捷键设置
   hotkeys: HotkeySettings;
   setHotkeys: (hotkeys: HotkeySettings) => void;
+
+  // 全局快捷键注册失败信息（不落盘，仅本次运行）
+  globalHotkeyError: GlobalHotkeyError | null;
+  setGlobalHotkeyError: (err: GlobalHotkeyError | null) => void;
 
   // 任务选项预览显示设置
   showOptionPreview: boolean;
