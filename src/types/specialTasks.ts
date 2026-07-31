@@ -164,6 +164,7 @@ const MXU_LAUNCH_TASK_DEF_INTERNAL: TaskItem = {
     '__MXU_LAUNCH_WAIT_OPTION__',
     '__MXU_LAUNCH_SKIP_OPTION__',
     '__MXU_LAUNCH_CMD_OPTION__',
+    '__MXU_LAUNCH_DELAY_OPTION__',
   ],
   pipeline_override: {
     [MXU_LAUNCH_ENTRY]: {
@@ -299,6 +300,30 @@ const MXU_LAUNCH_SKIP_OPTION_DEF_INTERNAL: SwitchOption = {
     },
   ],
   default_case: 'No',
+};
+
+// MXU_LAUNCH 启动延迟选项定义（启动完成后等待指定秒数，用于等待模拟器等程序完全启动）
+const MXU_LAUNCH_DELAY_OPTION_DEF_INTERNAL: InputOption = {
+  type: 'input',
+  label: 'specialTask.launch.delayLabel',
+  description: 'specialTask.launch.delayHint',
+  inputs: [
+    {
+      name: 'startup_delay',
+      label: 'specialTask.launch.delayLabel',
+      default: '0',
+      pipeline_type: 'int',
+      verify: '^\\d+$',
+      pattern_msg: 'specialTask.launch.delayError',
+    },
+  ],
+  pipeline_override: {
+    [MXU_LAUNCH_ENTRY]: {
+      custom_action_param: {
+        startup_delay: '{startup_delay}',
+      },
+    },
+  },
 };
 
 // MXU_WEBHOOK 任务定义
@@ -576,6 +601,7 @@ export const MXU_SPECIAL_TASKS: Record<string, MxuSpecialTaskDefinition> = {
       __MXU_LAUNCH_WAIT_OPTION__: MXU_LAUNCH_WAIT_OPTION_DEF_INTERNAL,
       __MXU_LAUNCH_SKIP_OPTION__: MXU_LAUNCH_SKIP_OPTION_DEF_INTERNAL,
       __MXU_LAUNCH_CMD_OPTION__: MXU_LAUNCH_CMD_OPTION_DEF_INTERNAL,
+      __MXU_LAUNCH_DELAY_OPTION__: MXU_LAUNCH_DELAY_OPTION_DEF_INTERNAL,
     },
     iconName: 'Play',
     iconColorClass: 'text-success/80',

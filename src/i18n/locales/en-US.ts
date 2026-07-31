@@ -168,6 +168,10 @@ export default {
         'When enabled, launches the program via cmd /c to detach from the current process tree. Some games may detect the process tree (Windows only)',
       cmdYes: 'Launch via cmd /c',
       cmdNo: 'Launch as direct subprocess',
+      delayLabel: 'Startup Delay',
+      delayHint:
+        'Wait the specified seconds after launching before continuing, useful for waiting for emulators to fully start',
+      delayError: 'Enter a non-negative integer',
     },
     notify: {
       label: '💬 System Notification',

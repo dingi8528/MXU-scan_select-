@@ -160,6 +160,9 @@ export default {
         '啟用時透過 cmd /c 啟動程式，使其脫離當前進程樹。一些遊戲可能會檢測進程樹（僅 Windows 生效）',
       cmdYes: '透過 cmd /c 啟動',
       cmdNo: '直接啟動子行程',
+      delayLabel: '啟動延遲',
+      delayHint: '啟動程式後等待指定秒數再繼續，用於等待模擬器等程式完全啟動',
+      delayError: '請輸入非負整數',
     },
     notify: {
       label: '💬 系統通知',

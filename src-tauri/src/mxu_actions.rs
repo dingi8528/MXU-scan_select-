@@ -196,9 +196,9 @@ fn mxu_waituntil_action_fn(
 const MXU_LAUNCH_ACTION: &str = "MXU_LAUNCH_ACTION";
 
 /// MXU_LAUNCH custom action 回调函数
-/// 从 custom_action_param 中读取 program, args, wait_for_exit，启动外部程序
+/// 从 custom_action_param 中读取 program, args, wait_for_exit, startup_delay，启动外部程序
 fn mxu_launch_action_fn(
-    _ctx: &maa_framework::context::Context,
+    ctx: &maa_framework::context::Context,
     args: &maa_framework::custom::ActionArgs,
 ) -> bool {
     let param_str = args.param;
@@ -241,6 +241,12 @@ fn mxu_launch_action_fn(
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
+    // 启动延迟（秒）：启动完成后等待指定秒数再继续，用于等待模拟器等程序完全启动
+    let startup_delay = json
+        .get("startup_delay")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+
     // 如果启用了跳过检查且程序已在运行，直接返回成功
     if skip_if_running {
         if crate::commands::system::check_process_running(&program) {
@@ -281,7 +287,7 @@ fn mxu_launch_action_fn(
         }
     }
 
-    if wait_for_exit {
+    let launch_ok = if wait_for_exit {
         match cmd.status() {
             Ok(status) => {
                 let exit_code = status.code().unwrap_or(-1);
@@ -304,7 +310,26 @@ fn mxu_launch_action_fn(
                 false
             }
         }
+    };
+
+    if !launch_ok {
+        return false;
     }
+
+    // 启动完成后等待指定秒数（可中断），与前置程序的启动延迟行为一致
+    if startup_delay > 0 {
+        info!(
+            "[MXU_LAUNCH] Program launched, waiting {} seconds before continuing...",
+            startup_delay
+        );
+        if !wait_with_stop_check(ctx, startup_delay) {
+            warn!("[MXU_LAUNCH] Startup delay interrupted by stop request");
+            return false;
+        }
+        info!("[MXU_LAUNCH] Startup delay completed");
+    }
+
+    true
 }
 
 // ============================================================================

@@ -160,6 +160,9 @@ export default {
         '启用时通过 cmd /c 启动程序，使其脱离当前进程树。一些游戏可能会检测进程树（仅 Windows 生效）',
       cmdYes: '通过 cmd /c 启动',
       cmdNo: '直接启动子进程',
+      delayLabel: '启动延迟',
+      delayHint: '启动程序后等待指定秒数再继续，用于等待模拟器等程序完全启动',
+      delayError: '请输入非负整数',
     },
     notify: {
       label: '💬 系统通知',
