@@ -315,6 +315,7 @@ pub fn run() {
             // 配置同步命令（WebUI 实时同步）
             commands::app_config::notify_config_changed,
             commands::app_config::rescan_scan_select,
+            commands::app_config::take_config_recovery_notice,
             // 匿名遥测命令
             commands::telemetry::telemetry_init,
             commands::telemetry::telemetry_set_enabled,
