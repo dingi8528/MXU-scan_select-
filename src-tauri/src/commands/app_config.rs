@@ -174,7 +174,7 @@ impl AppConfigState {
 
         let cases: Vec<serde_json::Value> = files
             .iter()
-            .map(|f| serde_json::json!({ "name": f, "label": f }))
+            .map(|f| build_scan_select_case(&scan_dir, f))
             .collect();
 
         option["cases"] = serde_json::Value::Array(cases.clone());
@@ -358,6 +358,31 @@ fn load_translations(
     translations
 }
 
+/// 判断文件名是否为图片文件（用于 scan_select 生成 case 的 icon）
+fn is_image_file(file: &str) -> bool {
+    let ext = file.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+    matches!(
+        ext.as_str(),
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "ico" | "svg"
+    )
+}
+
+/// 构建 scan_select 的 case：扫描到的文件本身是图片时，icon 取该文件相对 interface.json 根目录的路径
+fn build_scan_select_case(scan_dir: &str, file: &str) -> serde_json::Value {
+    if is_image_file(file) {
+        let icon = format!(
+            "{}/{}",
+            scan_dir
+                .trim_end_matches(|c| c == '/' || c == '\\')
+                .replace('\\', "/"),
+            file
+        );
+        serde_json::json!({ "name": file, "label": file, "icon": icon })
+    } else {
+        serde_json::json!({ "name": file, "label": file })
+    }
+}
+
 /// 展开所有 scan_select 类型选项，扫描目录填充 cases（参照 MWU 的 _expand_scan_select_options）
 fn expand_scan_select_options(interface: &mut serde_json::Value, base_dir: &Path) {
     let options = match interface.get_mut("option").and_then(|v| v.as_object_mut()) {
@@ -398,7 +423,7 @@ fn expand_scan_select_options(interface: &mut serde_json::Value, base_dir: &Path
             Ok(files) => {
                 let cases: Vec<serde_json::Value> = files
                     .iter()
-                    .map(|f| serde_json::json!({ "name": f, "label": f }))
+                    .map(|f| build_scan_select_case(&scan_dir, f))
                     .collect();
                 log::info!(
                     "scan_select 选项 {} 扫描完成，找到 {} 个匹配项",
