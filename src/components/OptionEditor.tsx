@@ -822,6 +822,16 @@ export function OptionEditor({
           </Tooltip>
         )}
       </div>
+      {/* scan_select：选项下方显示当前选中项的图片（扫描结果为图片时） */}
+      {isScanSelect && selectedCase?.icon && (
+        <div className="flex items-center justify-center rounded-md border border-border bg-bg-tertiary p-2">
+          <AsyncIcon
+            icon={selectedCase.icon}
+            basePath={basePath}
+            className="h-auto w-auto max-w-full object-contain rounded"
+          />
+        </div>
+      )}
       {/* 渲染嵌套选项（可折叠，复用任务标题的 grid 展开动画） */}
       {nestedOptionKeys.length > 0 && (
         <div
