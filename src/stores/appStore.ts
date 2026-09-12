@@ -75,6 +75,7 @@ import {
   sanitizeOptionValues,
 } from './helpers';
 import { persistRuntimeLogs } from '@/utils/runtimeLogPersistence';
+import { saveRuntimeLog } from '@/utils/runtimeLogFile';
 import { cacheTaskEnabledForController } from '@/utils/taskControllerCache';
 // 从独立模块导入类型和辅助函数
 import type { AppState, LogEntry, TaskRunStatus } from './types';
@@ -885,7 +886,10 @@ export const useAppStore = create<AppState>()(
                 const optDef = pi.option[optionKey];
                 if (
                   optDef &&
-                  (optDef.type === 'switch' || optDef.type === 'select' || optDef.type === 'scan_select' || !optDef.type) &&
+                  (optDef.type === 'switch' ||
+                    optDef.type === 'select' ||
+                    optDef.type === 'scan_select' ||
+                    !optDef.type) &&
                   'cases' in optDef
                 ) {
                   let selectedCase;
@@ -2312,6 +2316,7 @@ export const useAppStore = create<AppState>()(
         };
 
         forwardLogToStdout(log.message);
+        saveRuntimeLog(instanceId, newLog, i18n.language);
 
         pushLogToBackend(instanceId, {
           id: newLog.id,

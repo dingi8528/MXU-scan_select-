@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { isTauri } from '@/utils/paths';
 import { loggers } from '@/utils/logger';
 import { useAppStore } from '@/stores/appStore';
+import { flushRuntimeLogFile } from '@/utils/runtimeLogFile';
 
 export type ExportStatus = 'idle' | 'exporting' | 'success' | 'error';
 
@@ -28,6 +29,7 @@ export function useExportLogs() {
     setExportModal({ show: true, status: 'exporting' });
     try {
       const { invoke } = await import('@tauri-apps/api/core');
+      await flushRuntimeLogFile();
       const zipPath = await invoke<string>('export_logs', {
         projectName: projectInterface?.name,
         projectVersion: projectInterface?.version,

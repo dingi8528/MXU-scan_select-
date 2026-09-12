@@ -22,19 +22,12 @@ import { clearPersistedRuntimeLogs } from '@/utils/runtimeLogPersistence';
 import { getAllLogsFromBackend } from '@/utils/logStdout';
 import { loadPersistedRuntimeLogs, mergeRuntimeLogs } from '@/utils/runtimeLogPersistence';
 import type { LogEntry } from '@/stores/types';
+import { formatRuntimeLogLine, formatRuntimeLogTime } from '@/utils/runtimeLogText';
+import { flushRuntimeLogFile } from '@/utils/runtimeLogFile';
 
 const DEFAULT_VISIBLE_LOG_LIMIT = 500;
 const EXPANDED_LOG_LIMIT = 2000;
 const BOTTOM_FOLLOW_THRESHOLD_PX = 24;
-
-function formatLogTime(date: Date, locale?: string) {
-  return date.toLocaleTimeString(locale || undefined, {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-}
 
 export function LogsPanel() {
   const { t, i18n } = useTranslation();
@@ -91,6 +84,7 @@ export function LogsPanel() {
   const clearLogFiles = useCallback(async () => {
     if (!isTauri()) return;
     try {
+      await flushRuntimeLogFile();
       await invoke<number>('clear_log_files', {
         excludeFileName: getCurrentLogFileName(),
       });
@@ -108,11 +102,9 @@ export function LogsPanel() {
   }, [activeInstanceId, clearLogFiles, clearLogs]);
 
   const handleCopyAll = useCallback(() => {
-    const text = visibleLogs
-      .map((log) => `[${log.timestamp.toLocaleTimeString()}] ${log.message}`)
-      .join('\n');
+    const text = visibleLogs.map((log) => formatRuntimeLogLine(log, i18n.language)).join('');
     navigator.clipboard.writeText(text);
-  }, [visibleLogs]);
+  }, [visibleLogs, i18n.language]);
 
   const handleShowMoreLogs = useCallback(() => {
     if (isExpandingLogs) return;
@@ -347,7 +339,7 @@ export function LogsPanel() {
                     )}
                   >
                     <span className="text-text-muted/90 w-[64px] flex-shrink-0 tabular-nums text-[11px] leading-4">
-                      {formatLogTime(log.timestamp, i18n.language)}
+                      {formatRuntimeLogTime(log.timestamp, i18n.language)}
                     </span>
                     <span
                       className="min-w-0 flex-1 break-words leading-4 focus-content"
@@ -362,7 +354,7 @@ export function LogsPanel() {
                     )}
                   >
                     <span className="text-text-muted/90 w-[64px] flex-shrink-0 tabular-nums text-[11px] leading-4">
-                      {formatLogTime(log.timestamp, i18n.language)}
+                      {formatRuntimeLogTime(log.timestamp, i18n.language)}
                     </span>
                     <span className="min-w-0 flex-1 break-words whitespace-pre-wrap leading-4">
                       {log.message}
