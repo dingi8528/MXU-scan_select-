@@ -695,6 +695,9 @@ export default {
     channel: '업데이트 채널',
     channelStable: '안정 버전',
     channelBeta: '베타 버전',
+    autoUpdate: '자동 업데이트',
+    autoUpdateHint:
+      '활성화하면 시작 시 업데이트를 자동으로 확인, 다운로드 및 설치합니다. 비활성화하면 아래 버튼으로만 수동 업데이트할 수 있습니다',
     cdk: 'Mirror짱 CDK',
     cdkPlaceholder: 'CDK 입력 (선택사항)',
     serviceName: 'Mirror짱',

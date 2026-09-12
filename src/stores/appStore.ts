@@ -1492,14 +1492,16 @@ export const useAppStore = create<AppState>()(
         windowPosition: localLayout ? localLayout.windowPosition : config.settings.windowPosition,
         mirrorChyanSettings: (() => {
           const saved = config.settings.mirrorChyan || defaultMirrorChyanSettings;
+          // 旧配置无 autoUpdateEnabled 字段，默认开启以保持原有自动更新行为
+          const normalized = { ...saved, autoUpdateEnabled: saved.autoUpdateEnabled ?? true };
           const piName = get().projectInterface?.name;
-          if (saved.cdk) {
-            return { ...saved, cdkEncrypted: encryptCdk(saved.cdk, piName) };
+          if (normalized.cdk) {
+            return { ...normalized, cdkEncrypted: encryptCdk(normalized.cdk, piName) };
           }
-          if (saved.cdkEncrypted) {
-            return { ...saved, cdk: decryptCdk(saved.cdkEncrypted, piName) };
+          if (normalized.cdkEncrypted) {
+            return { ...normalized, cdk: decryptCdk(normalized.cdkEncrypted, piName) };
           }
-          return saved;
+          return normalized;
         })(),
         proxySettings: config.settings.proxy,
         showOptionPreview:
@@ -1998,6 +2000,10 @@ export const useAppStore = create<AppState>()(
     setMirrorChyanChannel: (channel) =>
       set((state) => ({
         mirrorChyanSettings: { ...state.mirrorChyanSettings, channel },
+      })),
+    setAutoUpdateEnabled: (enabled) =>
+      set((state) => ({
+        mirrorChyanSettings: { ...state.mirrorChyanSettings, autoUpdateEnabled: enabled },
       })),
 
     // 代理设置

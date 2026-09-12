@@ -375,6 +375,7 @@ export interface AppState {
   mirrorChyanSettings: MirrorChyanSettings;
   setMirrorChyanCdk: (cdk: string) => void;
   setMirrorChyanChannel: (channel: UpdateChannel) => void;
+  setAutoUpdateEnabled: (enabled: boolean) => void;
 
   // 代理设置
   proxySettings: ProxySettings | undefined;

@@ -709,6 +709,9 @@ export default {
     channel: 'Update Channel',
     channelStable: 'Stable',
     channelBeta: 'Beta',
+    autoUpdate: 'Auto Update',
+    autoUpdateHint:
+      'When enabled, updates are automatically checked, downloaded, and installed on startup; when disabled, updates can only be done manually via the button below',
     cdk: 'MirrorChyan CDK',
     cdkPlaceholder: 'Enter your CDK (optional)',
     serviceName: 'MirrorChyan',

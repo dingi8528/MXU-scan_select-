@@ -707,6 +707,9 @@ export default {
     channel: '更新チャンネル',
     channelStable: '安定版',
     channelBeta: 'ベータ版',
+    autoUpdate: '自動更新',
+    autoUpdateHint:
+      '有効にすると起動時に更新を自動で確認・ダウンロード・インストールします。無効の場合は下のボタンから手動で更新してください',
     cdk: 'Mirror醤 CDK',
     cdkPlaceholder: 'CDK を入力（任意）',
     serviceName: 'Mirror醤',

@@ -116,6 +116,8 @@ export interface MirrorChyanSettings {
   cdkEncrypted?: string; // 加密后的 CDK（持久化用，XOR + Base64）
   channel: UpdateChannel; // 更新频道：stable(正式版) / beta(公测版)
   githubPat?: string; // GitHub Personal Access Token（支持 classic 和 fine-grained）
+  /** 是否自动更新：开启后启动时自动检查、下载并安装；关闭后仅支持手动检查更新（默认 true） */
+  autoUpdateEnabled?: boolean;
 }
 
 // 代理设置
@@ -203,6 +205,7 @@ export const defaultWindowSize: WindowSize = {
 export const defaultMirrorChyanSettings: MirrorChyanSettings = {
   cdk: '',
   channel: 'stable',
+  autoUpdateEnabled: true,
 };
 
 // 默认截图帧率

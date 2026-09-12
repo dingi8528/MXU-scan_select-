@@ -413,6 +413,8 @@ function App() {
   // 尝试自动安装更新（无任务运行中时触发）
   const tryAutoInstallUpdate = useCallback(() => {
     const state = useAppStore.getState();
+    // 关闭自动更新时，不自动安装，仅保留手动安装入口
+    if (!(state.mirrorChyanSettings.autoUpdateEnabled ?? true)) return;
     if (state.downloadStatus !== 'completed') return;
     if (state.installStatus !== 'idle') return;
     if (state.autoInstallPending) return;
@@ -1020,8 +1022,11 @@ function App() {
       }
 
       // 检查是否有待安装的更新（上次下载完成但未安装）
-      // 调试版本跳过待安装更新检测
-      if (!isDebugVersion(result.interface.version)) {
+      // 调试版本跳过待安装更新检测；关闭自动更新时也不做后续安装流程
+      if (
+        !isDebugVersion(result.interface.version) &&
+        (useAppStore.getState().mirrorChyanSettings.autoUpdateEnabled ?? true)
+      ) {
         const pendingUpdate = await getPendingUpdateInfo();
         if (pendingUpdate) {
           log.info('检测到待安装更新:', pendingUpdate.versionName);
@@ -1051,14 +1056,16 @@ function App() {
         }
       }
 
-      // 自动检查更新并下载（调试版本跳过，MXU 开发模式跳过）
+      // 自动检查更新并下载（调试版本跳过，MXU 开发模式跳过，关闭自动更新时跳过）
       if (result.interface.mirrorchyan_rid && result.interface.version) {
+        const appState = useAppStore.getState();
         if (import.meta.env.DEV) {
           log.info('MXU 开发模式，跳过自动更新检查');
         } else if (isDebugVersion(result.interface.version)) {
           log.info(`非正式版本 (${result.interface.version})，跳过自动更新检查`);
+        } else if (!(appState.mirrorChyanSettings.autoUpdateEnabled ?? true)) {
+          log.info('自动更新已关闭，跳过自动检查更新');
         } else {
-          const appState = useAppStore.getState();
           try {
             const updateResult = await checkAndPrepareDownload({
               resourceId: result.interface.mirrorchyan_rid,

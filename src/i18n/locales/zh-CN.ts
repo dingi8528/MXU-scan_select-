@@ -683,6 +683,8 @@ export default {
     channel: '更新频道',
     channelStable: '正式版',
     channelBeta: '公测版',
+    autoUpdate: '自动更新',
+    autoUpdateHint: '开启后启动时自动检查、下载并安装更新；关闭后仅可通过下方按钮手动更新',
     cdk: 'Mirror酱 CDK',
     cdkPlaceholder: '输入您的 CDK（可选）',
     serviceName: 'Mirror酱',
