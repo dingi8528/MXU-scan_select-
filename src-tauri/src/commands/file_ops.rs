@@ -331,9 +331,9 @@ fn clear_dir_contents(dir: &Path) -> u64 {
 }
 
 /// 递归删除 `dir` 及其所有子目录下的 .log 文件，返回删除数量。
-/// `exclude_file_name` 匹配的文件名会被跳过（当前会话正在写入的日志）。
+/// `exclude_file_names` 中匹配的文件名会被跳过（当前会话正在写入的日志）。
 /// 只删文件不回收空目录，避免改动既有目录结构。
-fn remove_log_files_recursively(dir: &Path, exclude_file_name: Option<&str>) -> u64 {
+fn remove_log_files_recursively(dir: &Path, exclude_file_names: &[String]) -> u64 {
     let entries = match std::fs::read_dir(dir) {
         Ok(entries) => entries,
         Err(e) => {
@@ -348,7 +348,7 @@ fn remove_log_files_recursively(dir: &Path, exclude_file_name: Option<&str>) -> 
 
         if path.is_dir() {
             deleted =
-                deleted.saturating_add(remove_log_files_recursively(&path, exclude_file_name));
+                deleted.saturating_add(remove_log_files_recursively(&path, exclude_file_names));
             continue;
         }
 
@@ -360,7 +360,9 @@ fn remove_log_files_recursively(dir: &Path, exclude_file_name: Option<&str>) -> 
             continue;
         };
 
-        if !name.ends_with(".log") || exclude_file_name == Some(name) {
+        if !name.ends_with(".log")
+            || exclude_file_names.iter().any(|excluded| excluded == name)
+        {
             continue;
         }
 
@@ -374,8 +376,8 @@ fn remove_log_files_recursively(dir: &Path, exclude_file_name: Option<&str>) -> 
 }
 
 /// `clear_log_files` 的可测核心，接收具体目录而不依赖应用数据目录。
-fn clear_log_dirs(debug_dir: &Path, exports_dir: &Path, exclude_file_name: Option<&str>) -> u64 {
-    let mut deleted = remove_log_files_recursively(debug_dir, exclude_file_name);
+fn clear_log_dirs(debug_dir: &Path, exports_dir: &Path, exclude_file_names: &[String]) -> u64 {
+    let mut deleted = remove_log_files_recursively(debug_dir, exclude_file_names);
 
     for dir_name in DEBUG_ARTIFACT_DIRS {
         let artifact_dir = debug_dir.join(dir_name);
@@ -396,13 +398,13 @@ fn clear_log_dirs(debug_dir: &Path, exports_dir: &Path, exclude_file_name: Optio
 /// 以及 debug_exports/ 下的日志导出产物（保留这几个目录本身）。
 /// 可选择排除一个当前正在使用的日志文件。返回删除的文件与产物总数。
 #[tauri::command]
-pub fn clear_log_files(exclude_file_name: Option<String>) -> Result<u64, String> {
+pub fn clear_log_files(exclude_file_names: Vec<String>) -> Result<u64, String> {
     let data_dir = get_app_data_dir()?;
 
     Ok(clear_log_dirs(
         &data_dir.join(DEBUG_DIR),
         &data_dir.join(DEBUG_EXPORTS_DIR),
-        exclude_file_name.as_deref(),
+        &exclude_file_names,
     ))
 }
 

@@ -36,3 +36,6 @@ export function saveRuntimeLog(
 
 /** 导出日志包前等待已有写入完成。 */
 export const flushRuntimeLogFile = writer.flush;
+
+/** 启动清理时保留当天正在追加的 UI 日志。 */
+export const getRuntimeLogFileName = () => fileName;

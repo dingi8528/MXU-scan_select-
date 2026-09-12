@@ -70,6 +70,7 @@ import {
   persistRuntimeLogs,
 } from '@/utils/runtimeLogPersistence';
 import { getCurrentLogFileName } from '@/utils/logger';
+import { getRuntimeLogFileName } from '@/utils/runtimeLogFile';
 import {
   isTauri,
   isValidWindowSize,
@@ -767,7 +768,9 @@ function App() {
           if (isTauri()) {
             try {
               const deleted = await invoke<number>('clear_log_files', {
-                excludeFileName: getCurrentLogFileName(),
+                excludeFileNames: [getCurrentLogFileName(), getRuntimeLogFileName()].filter(
+                  (name): name is string => Boolean(name),
+                ),
               });
               log.info('Auto-cleared log files and debug artifacts on launch:', deleted);
             } catch {

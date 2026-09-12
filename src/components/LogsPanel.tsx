@@ -86,7 +86,9 @@ export function LogsPanel() {
     try {
       await flushRuntimeLogFile();
       await invoke<number>('clear_log_files', {
-        excludeFileName: getCurrentLogFileName(),
+        excludeFileNames: [getCurrentLogFileName()].filter(
+          (name): name is string => Boolean(name),
+        ),
       });
     } catch {
       // ignore cleanup errors
