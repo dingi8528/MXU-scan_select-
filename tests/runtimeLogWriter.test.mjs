@@ -17,7 +17,7 @@ async function loadModule(file) {
 const { createRuntimeLogWriter } = await loadModule('runtimeLogWriter');
 const { formatRuntimeLogLine } = await loadModule('runtimeLogText');
 
-test('异步初始化期间的日志按 UI 顺序写入，各实例独立保存 UTF-8 文件', async () => {
+test('异步初始化期间的日志按 UI 顺序写入同一个日期文件', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'mxu-runtime-log-'));
   const errors = [];
   let release;
@@ -29,13 +29,13 @@ test('异步初始化期间的日志按 UI 顺序写入，各实例独立保存 
       await ready;
       await appendFile(path.join(dir, file), text, 'utf8');
     },
-    'test',
+    'ui-2026-09-12.log',
     (error) => errors.push(error),
   );
   try {
-    writer.write('../不安全的实例名', '[15:21:22] 正在连接设备…\n');
-    writer.write('second', '[15:21:23] 另一个标签页\n');
-    writer.write('../不安全的实例名', '[15:21:24] 设备连接成功 ✅\n');
+    writer.write('[15:21:22] 正在连接设备…\n');
+    writer.write('[15:21:23] 另一个标签页\n');
+    writer.write('[15:21:24] 设备连接成功 ✅\n');
     let flushed = false;
     const flush = writer.flush().then(() => {
       flushed = true;
@@ -44,14 +44,10 @@ test('异步初始化期间的日志按 UI 顺序写入，各实例独立保存 
     assert.equal(flushed, false);
     release();
     await flush;
-    assert.deepEqual((await readdir(dir)).sort(), ['ui-test-tab1-1.log', 'ui-test-tab2-1.log']);
+    assert.deepEqual(await readdir(dir), ['ui-2026-09-12.log']);
     assert.equal(
-      await readFile(path.join(dir, 'ui-test-tab1-1.log'), 'utf8'),
-      '[15:21:22] 正在连接设备…\n[15:21:24] 设备连接成功 ✅\n',
-    );
-    assert.equal(
-      await readFile(path.join(dir, 'ui-test-tab2-1.log'), 'utf8'),
-      '[15:21:23] 另一个标签页\n',
+      await readFile(path.join(dir, 'ui-2026-09-12.log'), 'utf8'),
+      '[15:21:22] 正在连接设备…\n[15:21:23] 另一个标签页\n[15:21:24] 设备连接成功 ✅\n',
     );
     assert.deepEqual(errors, []);
   } finally {
@@ -61,23 +57,44 @@ test('异步初始化期间的日志按 UI 顺序写入，各实例独立保存 
   }
 });
 
-test('按 UTF-8 字节分卷，超长单条日志不会被截断', async () => {
+test('文件名在 writer 创建时固定，持续写入时不会因跨天或体积切换文件', async () => {
   const files = new Map();
   const writer = createRuntimeLogWriter(
     async (file, text) => {
       files.set(file, (files.get(file) || '') + text);
     },
-    'rotation',
+    'ui-2026-09-12.log',
     assert.fail,
-    10,
   );
-  writer.write('a', '中文\n'); // 7 bytes
-  writer.write('a', '后续\n');
-  writer.write('a', '完整保留很长的一条日志\n');
-  writer.write('a', '末尾\n');
+  writer.write('中文\n');
+  writer.write('后续\n');
+  writer.write('完整保留很长的一条日志\n');
+  writer.write('末尾\n');
   await writer.flush();
-  assert.equal(files.size, 4);
+  assert.deepEqual([...files.keys()], ['ui-2026-09-12.log']);
   assert.equal([...files.values()].join(''), '中文\n后续\n完整保留很长的一条日志\n末尾\n');
+});
+
+test('同一天多次启动会追加到同一个日期文件', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'mxu-runtime-log-restart-'));
+  const append = (file, text) => appendFile(path.join(dir, file), text, 'utf8');
+  try {
+    const firstRun = createRuntimeLogWriter(append, 'ui-2026-09-12.log', assert.fail);
+    firstRun.write('[09:00:00] 第一次运行\n');
+    await firstRun.flush();
+
+    const secondRun = createRuntimeLogWriter(append, 'ui-2026-09-12.log', assert.fail);
+    secondRun.write('[18:00:00] 第二次运行\n');
+    await secondRun.flush();
+
+    assert.deepEqual(await readdir(dir), ['ui-2026-09-12.log']);
+    assert.equal(
+      await readFile(path.join(dir, 'ui-2026-09-12.log'), 'utf8'),
+      '[09:00:00] 第一次运行\n[18:00:00] 第二次运行\n',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('写入失败会报告错误，后续日志仍可继续写入', async () => {
@@ -95,14 +112,14 @@ test('写入失败会报告错误，后续日志仍可继续写入', async () =>
     'retry',
     (error) => errors.push(error),
   );
-  writer.write('a', 'first');
-  writer.write('a', 'second');
+  writer.write('first');
+  writer.write('second');
   await writer.flush();
   assert.equal(errors.length, 1);
   assert.deepEqual(saved, ['second']);
 });
 
-test('文本格式使用原始 UI 时间，保留中文、换行和字面量尖括号', () => {
+test('文本格式为每个实际行添加同一个 UI 时间', () => {
   assert.equal(
     formatRuntimeLogLine(
       {
@@ -111,6 +128,6 @@ test('文本格式使用原始 UI 时间，保留中文、换行和字面量尖�
       },
       'zh-CN',
     ),
-    '[15:21:22] 连接失败，第 1 次重试…\n1 < 2 & 中文\n',
+    '[15:21:22] 连接失败，第 1 次重试…\n[15:21:22] 1 < 2 & 中文\n',
   );
 });

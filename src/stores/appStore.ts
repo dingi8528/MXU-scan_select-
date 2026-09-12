@@ -2316,7 +2316,7 @@ export const useAppStore = create<AppState>()(
         };
 
         forwardLogToStdout(log.message);
-        saveRuntimeLog(instanceId, newLog, i18n.language);
+        saveRuntimeLog(newLog, i18n.language);
 
         pushLogToBackend(instanceId, {
           id: newLog.id,

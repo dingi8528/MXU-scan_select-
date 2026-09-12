@@ -33,5 +33,9 @@ export function formatRuntimeLogLine(
   log: { timestamp: Date; message: string; html?: string },
   locale?: string,
 ): string {
-  return `[${formatRuntimeLogTime(log.timestamp, locale)}] ${runtimeLogText(log)}\n`;
+  const prefix = `[${formatRuntimeLogTime(log.timestamp, locale)}] `;
+  return `${runtimeLogText(log)
+    .split(/\r\n|\r|\n/)
+    .map((line) => `${prefix}${line}`)
+    .join('\n')}\n`;
 }
