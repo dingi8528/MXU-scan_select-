@@ -1,4 +1,11 @@
 export default {
+  localLink: {
+    invalid: '잘못된 로컬 링크입니다. 앱 폴더 내의 상대 경로를 사용하세요.',
+    desktopOnly: '로컬 파일은 MXU 데스크톱 앱에서 열어 주세요.',
+    untrustedSource: '온라인 설명의 링크로 로컬 파일을 실행할 수 없습니다.',
+    openFailed: '로컬 파일을 열지 못했습니다',
+    notFound: '파일 또는 폴더가 없습니다. 앱 패키지가 모두 압축 해제되었는지 확인하세요.',
+  },
   // 공통
   common: {
     confirm: '확인',

@@ -1,4 +1,11 @@
 export default {
+  localLink: {
+    invalid: '本機連結無效，請使用軟體目錄內的相對路徑',
+    desktopOnly: '請在 MXU 桌面用戶端中開啟本機檔案',
+    untrustedSource: '線上說明中的連結無法啟動本機檔案',
+    openFailed: '開啟本機檔案失敗',
+    notFound: '本機檔案或目錄不存在，請檢查軟體包是否完整',
+  },
   // 通用
   common: {
     confirm: '確定',

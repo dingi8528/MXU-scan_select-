@@ -1,4 +1,11 @@
 export default {
+  localLink: {
+    invalid: 'Invalid local link. Use a relative path inside the application directory.',
+    desktopOnly: 'Open local files in the MXU desktop app.',
+    untrustedSource: 'Links in online descriptions cannot launch local files.',
+    openFailed: 'Failed to open the local file',
+    notFound: 'The local file or folder is missing. Check that the application package is complete.',
+  },
   // Common
   common: {
     confirm: 'Confirm',

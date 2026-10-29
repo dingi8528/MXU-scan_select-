@@ -249,6 +249,7 @@ pub fn run() {
             commands::maa_agent::maa_stop_agent,
             // 文件操作命令
             commands::file_ops::read_local_file,
+            commands::local_links::open_local_link,
             commands::file_ops::read_local_file_base64,
             commands::file_ops::local_file_exists,
             commands::file_ops::get_exe_dir,
