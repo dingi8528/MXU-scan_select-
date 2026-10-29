@@ -21,6 +21,7 @@ import { findSwitchCase } from '@/utils/optionHelpers';
 import { getCheckboxMaxCount, getCheckboxMinCount } from '@/utils/checkboxOptionValidation';
 import { SwitchButton, TextInput, FileInput, TimeInput, HotkeyInput } from './FormControls';
 import { Tooltip } from './ui/Tooltip';
+import { DescriptionHtml } from './ui/DescriptionHtml';
 import { rescanScanSelectOption } from '@/services/interfaceLoader';
 import { loggers } from '@/utils/logger';
 
@@ -232,9 +233,10 @@ function OptionDescription({
       )}
       {/* 内容 */}
       {resolved.html && (
-        <div
+        <DescriptionHtml
           className="text-xs text-text-secondary [&_p]:my-0.5 [&_a]:text-accent [&_a]:hover:underline"
-          dangerouslySetInnerHTML={{ __html: resolved.html }}
+          html={resolved.html}
+          allowLocalLinks={!resolved.loading && resolved.type !== 'url'}
         />
       )}
     </div>
@@ -334,6 +336,12 @@ function InputField({
             value={value}
             onChange={onChange}
             placeholder={inputPlaceholder}
+            basePath={basePath}
+            defaultDirectory={input.file_dialog_dir}
+            filters={input.file_dialog_filters?.map((filter) => ({
+              ...filter,
+              name: resolveI18nText(filter.name, langKey) || filter.name,
+            }))}
             disabled={disabled}
             className="min-w-[min(12rem,100%)] flex-1 basis-[30%]"
           />

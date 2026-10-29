@@ -256,6 +256,10 @@ export interface InputItem {
    * MXU 扩展：输入控件类型，'file' 会渲染文件选择器，'time' 会渲染时间选择器
    */
   input_type?: 'text' | 'file' | 'time';
+  /** MXU 扩展：文件对话框起始目录，相对于 interface.json／软件目录。 */
+  file_dialog_dir?: string;
+  /** MXU 扩展：文件对话框筛选，第一项为默认类型；未指定时沿用通用筛选。 */
+  file_dialog_filters?: { name: string; extensions: string[] }[];
   /** MXU 扩展：输入框占位提示文本（i18n key） */
   placeholder?: string;
   /** MXU 扩展：密码字段；启用后 UI 掩码显示，配置加密存储，日志/遥测脱敏 */

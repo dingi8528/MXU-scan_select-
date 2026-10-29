@@ -20,6 +20,7 @@ import { generateTaskPipelineOverride } from '@/utils';
 import { OptionEditor, SwitchGrid, switchHasNestedOptions } from './OptionEditor';
 import { ContextMenu, useContextMenu } from './ContextMenu';
 import { Tooltip } from './ui/Tooltip';
+import { DescriptionHtml } from './ui/DescriptionHtml';
 import { ConfirmDialog } from './ConfirmDialog';
 import { buildListItemMenuItems, InlineNameEditor } from './listItemShared';
 import { TriStateCheckbox, getTaskCheckboxState } from './ui/TriStateCheckbox';
@@ -129,9 +130,10 @@ function DescriptionContent({
       )}
       {/* 内容 */}
       {html && (
-        <div
+        <DescriptionHtml
           className="text-xs text-text-secondary [&_p]:my-0.5 [&_a]:text-accent [&_a]:hover:underline"
-          dangerouslySetInnerHTML={{ __html: html }}
+          html={html}
+          allowLocalLinks={!loading && type !== 'url'}
         />
       )}
     </div>

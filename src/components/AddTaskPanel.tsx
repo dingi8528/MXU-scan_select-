@@ -23,6 +23,7 @@ import {
   addTaskPanelResizeStep,
 } from '@/types/config';
 import { Tooltip } from './ui/Tooltip';
+import { DescriptionHtml } from './ui/DescriptionHtml';
 import type { TaskItem, ActionConfig, GroupItem, PretaskItem } from '@/types/interface';
 import type { MxuSpecialTaskDefinition } from '@/types/specialTasks';
 import {
@@ -91,9 +92,10 @@ function TaskButton({
             <span>{t('taskItem.loadingDescription')}</span>
           </div>
         ) : resolvedDescription.html ? (
-          <div
+          <DescriptionHtml
             className="text-text-secondary [&_p]:my-0.5 [&_a]:text-accent [&_a]:hover:underline"
-            dangerouslySetInnerHTML={{ __html: resolvedDescription.html }}
+            html={resolvedDescription.html}
+            allowLocalLinks={!resolvedDescription.loading && resolvedDescription.type !== 'url'}
           />
         ) : null}
         {/* 不兼容提示 */}

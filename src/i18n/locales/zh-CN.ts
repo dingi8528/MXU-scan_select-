@@ -1,4 +1,11 @@
 export default {
+  localLink: {
+    invalid: '本地链接无效，请使用软件目录内的相对路径',
+    desktopOnly: '请在 MXU 桌面客户端中打开本地文件',
+    untrustedSource: '在线说明中的链接不能启动本地文件',
+    openFailed: '打开本地文件失败',
+    notFound: '本地文件或目录不存在，请检查软件包是否完整',
+  },
   // 通用
   common: {
     confirm: '确定',

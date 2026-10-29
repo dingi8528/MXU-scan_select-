@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { TaskItem } from './TaskItem';
+import { DescriptionHtml } from './ui/DescriptionHtml';
 import { ActionItem } from './ActionItem';
 import { ContextMenu, useContextMenu, type MenuItem } from './ContextMenu';
 import type { SavedTask } from '@/types/config';
@@ -86,9 +87,10 @@ function PresetCard({ preset, onApply }: { preset: PresetItem; onApply: () => vo
         </span>
       </div>
       {resolvedDescription.html ? (
-        <div
+        <DescriptionHtml
           className="text-xs text-text-secondary line-clamp-2 [&_p]:my-0"
-          dangerouslySetInnerHTML={{ __html: resolvedDescription.html }}
+          html={resolvedDescription.html}
+          allowLocalLinks={!resolvedDescription.loading && resolvedDescription.type !== 'url'}
         />
       ) : resolvedDescription.loading ? (
         <div className="flex items-center gap-1 text-xs text-text-muted">

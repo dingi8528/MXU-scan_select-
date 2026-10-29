@@ -43,6 +43,10 @@
       "allow": [{ "path": "**/*" }]
     },
     {
+      "identifier": "fs:allow-stat",
+      "allow": [{ "path": "**/*" }]
+    },
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [{ "path": "**/*" }]
     },

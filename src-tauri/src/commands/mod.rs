@@ -20,6 +20,8 @@ pub mod utils;
 pub mod app_config;
 pub mod download;
 pub mod file_ops;
+mod local_link_path;
+pub mod local_links;
 pub mod maa_agent;
 pub mod maa_core;
 pub mod state;

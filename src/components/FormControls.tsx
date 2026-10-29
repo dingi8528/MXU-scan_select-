@@ -8,6 +8,9 @@ import { FolderOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { open } from '@tauri-apps/plugin-dialog';
 import { isTauri } from '@tauri-apps/api/core';
+import { join } from '@tauri-apps/api/path';
+import { stat } from '@tauri-apps/plugin-fs';
+import { resolveFileDialogDefaultPath } from '@/utils/fileDialogPath';
 
 interface BaseFieldProps {
   label: string;
@@ -376,6 +379,9 @@ interface FileInputProps {
   placeholder?: string;
   disabled?: boolean;
   filters?: { name: string; extensions: string[] }[];
+  /** Explicit project-relative directory; generic program pickers leave this unset. */
+  defaultDirectory?: string;
+  basePath?: string;
   browseTitle?: string;
   className?: string;
 }
@@ -391,6 +397,8 @@ export function FileInput({
   placeholder,
   disabled,
   filters = defaultFileFilters,
+  defaultDirectory,
+  basePath,
   browseTitle,
   className,
 }: FileInputProps) {
@@ -400,9 +408,14 @@ export function FileInput({
     if (!isTauri() || disabled) return;
 
     try {
+      const defaultPath = await resolveFileDialogDefaultPath(basePath, defaultDirectory, {
+        join,
+        isDirectory: async (path) => (await stat(path)).isDirectory,
+      });
       const selected = await open({
         multiple: false,
         filters,
+        ...(defaultPath ? { defaultPath } : {}),
       });
 
       if (selected && typeof selected === 'string') {
@@ -424,6 +437,7 @@ export function FileInput({
       />
       {isTauri() && (
         <button
+          type="button"
           onClick={handleSelectFile}
           disabled={disabled}
           className={clsx(
