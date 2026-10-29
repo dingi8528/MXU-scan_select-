@@ -30,3 +30,5 @@ pnpm build
 ```
 
 此能力需要重新构建并更新 MXU 可执行文件。仅更新项目选项 JSON 不会改变旧客户端的行为。MaaFGO 需同时维护自己的输入 Schema，并在生成安卓输入配置时剔除这两个桌面扩展字段。
+
+2026-10-30 真实客户端验收：上述 Windows x86_64 调试包的系统文件框实际定位到测试安装目录 `config/Battle`，默认类型为 `JSON (*.json)`；JSON 样本可见，TXT 对照样本被筛除。取消后原队伍 ID 保持不变。目录缺失回退及通用程序筛选沿用原行为已由目录测试和真实组件的 mockIPC 检查覆盖，本次未再逐项进行原生点击。调试与发行构建见 [Actions run 40897947572](https://github.com/dingi8528/MXU-scan_select-/actions/runs/40897947572)。
