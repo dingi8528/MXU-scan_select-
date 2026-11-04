@@ -105,7 +105,7 @@ jobs:
       - name: Test Windows taskbar icon lifecycle
         if: matrix.arch == 'x86_64'
         run: |
-          cargo test --manifest-path src-tauri/Cargo.toml --lib window_icon:: --target x86_64-pc-windows-msvc
+          cargo test --release --manifest-path src-tauri/Cargo.toml --lib window_icon:: --target x86_64-pc-windows-msvc
 
       - name: Prepare artifacts
         shell: bash
