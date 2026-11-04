@@ -41,7 +41,7 @@ pub fn release_taskbar_icon(label: &str) {
 #[cfg(windows)]
 mod windows {
     use std::{cell::RefCell, collections::HashMap};
-    use winsafe::{co, guard::DestroyIconGuard, msg, prelude::*, HICON, HWND};
+    use winsafe::{co, guard::DestroyIconGuard, msg, HICON, HWND};
 
     thread_local! {
         // Only accessed on the UI thread. Do not destroy an icon while a window
