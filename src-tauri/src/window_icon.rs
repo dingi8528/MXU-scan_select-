@@ -82,7 +82,7 @@ mod windows {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use winsafe::{AtomStr, HINSTANCE, IdIdiStr, IdMenu, POINT, SIZE};
+        use winsafe::{prelude::Handle, AtomStr, HINSTANCE, IdIdiStr, IdMenu, POINT, SIZE};
 
         struct TestWindow(HWND);
 
