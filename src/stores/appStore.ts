@@ -910,7 +910,10 @@ export const useAppStore = create<AppState>()(
                 const optDef = pi.option[optionKey];
                 if (
                   optDef &&
-                  (optDef.type === 'switch' || optDef.type === 'select' || optDef.type === 'scan_select' || !optDef.type) &&
+                  (optDef.type === 'switch' ||
+                    optDef.type === 'select' ||
+                    optDef.type === 'scan_select' ||
+                    !optDef.type) &&
                   'cases' in optDef
                 ) {
                   let selectedCase;

@@ -852,16 +852,22 @@ fn parse_export_timestamp(dir_name: &str) -> Option<String> {
 }
 
 /// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表（核心实现，供其他模块调用）
-pub fn scan_directory_impl(base_dir: &str, scan_dir: &str, scan_filter: &str) -> Result<Vec<String>, String> {
+pub fn scan_directory_impl(
+    base_dir: &str,
+    scan_dir: &str,
+    scan_filter: &str,
+) -> Result<Vec<String>, String> {
     use std::path::Path;
 
     let base_path = Path::new(base_dir);
     let full_scan_dir = base_path.join(scan_dir);
 
     // 规范化路径进行安全检查
-    let resolved = full_scan_dir.canonicalize()
+    let resolved = full_scan_dir
+        .canonicalize()
         .map_err(|_| format!("无法访问扫描目录: {}", scan_dir))?;
-    let base_resolved = base_path.canonicalize()
+    let base_resolved = base_path
+        .canonicalize()
         .map_err(|_| "无法访问基础目录".to_string())?;
 
     // 安全检查：确保扫描目录在 base_dir 内
@@ -878,7 +884,7 @@ pub fn scan_directory_impl(base_dir: &str, scan_dir: &str, scan_filter: &str) ->
     // 使用 glob 匹配文件
     for entry in walkdir(&resolved, scan_filter)? {
         matched_files.push(entry);
-    };
+    }
 
     matched_files.sort();
     Ok(matched_files)
@@ -886,7 +892,11 @@ pub fn scan_directory_impl(base_dir: &str, scan_dir: &str, scan_filter: &str) ->
 
 /// 扫描指定目录下匹配过滤规则的文件，返回相对路径列表（Tauri 命令）
 #[tauri::command]
-pub fn scan_directory(base_dir: String, scan_dir: String, scan_filter: String) -> Result<Vec<String>, String> {
+pub fn scan_directory(
+    base_dir: String,
+    scan_dir: String,
+    scan_filter: String,
+) -> Result<Vec<String>, String> {
     scan_directory_impl(&base_dir, &scan_dir, &scan_filter)
 }
 
@@ -899,9 +909,7 @@ fn walkdir(dir: &Path, filter: &str) -> Result<Vec<String>, String> {
     let pattern_str = pattern.to_string_lossy();
 
     // 使用 glob crate 进行模式匹配
-    for entry in glob::glob(&pattern_str)
-        .map_err(|e| format!("glob 模式匹配失败: {}", e))?
-    {
+    for entry in glob::glob(&pattern_str).map_err(|e| format!("glob 模式匹配失败: {}", e))? {
         match entry {
             Ok(path) => {
                 if path.is_file() {

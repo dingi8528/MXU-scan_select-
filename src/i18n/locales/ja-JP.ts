@@ -4,7 +4,8 @@ export default {
     desktopOnly: 'ローカルファイルは MXU デスクトップアプリで開いてください。',
     untrustedSource: 'オンラインの説明内のリンクからローカルファイルは起動できません。',
     openFailed: 'ローカルファイルを開けませんでした',
-    notFound: 'ファイルまたはフォルダーがありません。アプリ一式が展開されているか確認してください。',
+    notFound:
+      'ファイルまたはフォルダーがありません。アプリ一式が展開されているか確認してください。',
   },
   // 共通
   common: {
@@ -176,7 +177,8 @@ export default {
       cmdYes: 'cmd /c で起動',
       cmdNo: 'サブプロセスとして直接起動',
       delayLabel: '起動遅延',
-      delayHint: '起動後に指定秒数待ってから続行します。エミュレータなどの完全起動を待つのに便利です',
+      delayHint:
+        '起動後に指定秒数待ってから続行します。エミュレータなどの完全起動を待つのに便利です',
       delayError: '0以上の整数を入力してください',
     },
     notify: {
@@ -335,7 +337,8 @@ export default {
     useCmdHint:
       '有効にすると cmd /c でプログラムを起動し、現在のプロセスツリーから切り離します。一部のゲームはプロセスツリーを検出する場合があります（Windows のみ）',
     startupDelay: '起動遅延',
-    startupDelayHint: '実行完了後、指定した秒数だけ待機してから続行します。エミュレータなどの完全起動を待つのに便利です',
+    startupDelayHint:
+      '実行完了後、指定した秒数だけ待機してから続行します。エミュレータなどの完全起動を待つのに便利です',
     startupDelaySuffix: '秒',
     startupDelayCountdown: '前処理プログラム {{name}} 完了、{{seconds}} 秒待機中...',
     preActionSkipped: '前処理プログラム {{name}} は実行中のためスキップしました',

@@ -4,7 +4,8 @@ export default {
     desktopOnly: 'Open local files in the MXU desktop app.',
     untrustedSource: 'Links in online descriptions cannot launch local files.',
     openFailed: 'Failed to open the local file',
-    notFound: 'The local file or folder is missing. Check that the application package is complete.',
+    notFound:
+      'The local file or folder is missing. Check that the application package is complete.',
   },
   // Common
   common: {
@@ -341,7 +342,8 @@ export default {
     useCmdHint:
       'When enabled, launches the program via cmd /c to detach from the current process tree. Some games may detect the process tree (Windows only)',
     startupDelay: 'Startup Delay',
-    startupDelayHint: 'Wait the specified seconds after execution before continuing, useful for waiting for emulators to fully start',
+    startupDelayHint:
+      'Wait the specified seconds after execution before continuing, useful for waiting for emulators to fully start',
     startupDelaySuffix: 'sec',
     startupDelayCountdown: 'Pre-program {{name}} completed, waiting {{seconds}} seconds...',
     preActionSkipped: 'Pre-program {{name}} is already running, skipped',
