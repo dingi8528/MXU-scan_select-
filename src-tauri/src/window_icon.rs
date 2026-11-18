@@ -51,7 +51,11 @@ mod windows {
 
     fn copy_small_icon(hwnd: &HWND) -> Result<DestroyIconGuard, String> {
         let handle = unsafe {
-            hwnd.SendMessage(msg::Wm::new(co::WM::GETICON, co::ICON_SZ::SMALL.raw() as _, 0))
+            hwnd.SendMessage(msg::Wm::new(
+                co::WM::GETICON,
+                co::ICON_SZ::SMALL.raw() as _,
+                0,
+            ))
         };
         if handle == 0 {
             return Err("Window has no small icon to use for the taskbar".into());
@@ -82,7 +86,7 @@ mod windows {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use winsafe::{prelude::Handle, AtomStr, HINSTANCE, IdIdiStr, IdMenu, POINT, SIZE};
+        use winsafe::{prelude::Handle, AtomStr, IdIdiStr, IdMenu, HINSTANCE, POINT, SIZE};
 
         struct TestWindow(HWND);
 
@@ -107,7 +111,10 @@ mod windows {
             }
 
             fn icon(&self, size: co::ICON_SZ) -> isize {
-                unsafe { self.0.SendMessage(msg::Wm::new(co::WM::GETICON, size.raw() as _, 0)) }
+                unsafe {
+                    self.0
+                        .SendMessage(msg::Wm::new(co::WM::GETICON, size.raw() as _, 0))
+                }
             }
 
             fn set_small_icon(&self, icon: &HICON) {
