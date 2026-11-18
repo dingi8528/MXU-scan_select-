@@ -391,47 +391,79 @@ function AppContent() {
   }, [setDashboardView]);
 
   const isResizingRef = useRef(false);
+  const sceneResizeBounds = useRef<{
+    rightEdge: number;
+    minWidth: number;
+    maxWidth: number;
+  } | null>(null);
 
   // 调整右侧面板宽度
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizingRef.current) return;
 
-      const newWidth = document.body.clientWidth - e.clientX;
+      const bounds = sceneResizeBounds.current;
+      const rightEdge = bounds?.rightEdge ?? document.body.clientWidth;
+      const newWidth = rightEdge - e.clientX;
       const store = useAppStore.getState();
 
       if (newWidth < 160) {
-        // 如果宽度小于最小宽度的一半 (160px)，折叠
+        // 沿用原版：右侧剩余不足 160px 时收起。
         store.setRightPanelCollapsed(true);
       } else {
-        // 否则展开，并更新宽度（限制在 320-最大可用宽度 之间）
-        // 最大宽度 = 窗口宽度 - 左侧最小宽度 - 分隔条宽度(约4px)
-        const maxWidth = Math.min(800, document.body.clientWidth - MIN_LEFT_PANEL_WIDTH - 4);
+        const minWidth = bounds?.minWidth ?? 320;
+        const maxWidth = bounds?.maxWidth ?? Math.min(800, rightEdge - MIN_LEFT_PANEL_WIDTH - 4);
         store.setRightPanelCollapsed(false);
-        const clampedWidth = Math.max(320, Math.min(maxWidth, newWidth));
+        const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
         store.setRightPanelWidth(clampedWidth);
       }
     };
 
-    const handleMouseUp = () => {
+    const endResize = () => {
       if (isResizingRef.current) {
         isResizingRef.current = false;
+        sceneResizeBounds.current = null;
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mouseup', endResize);
+    window.addEventListener('blur', endResize);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseup', endResize);
+      window.removeEventListener('blur', endResize);
+      endResize();
     };
   }, []);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
     e.preventDefault(); // 防止选中文本
+    const workspace = e.currentTarget.parentElement;
+    sceneResizeBounds.current = null;
+    if (workspace?.dataset.sceneLayout === 'bb-dubai') {
+      const style = getComputedStyle(workspace);
+      const area = workspace.getBoundingClientRect();
+      const handle = e.currentTarget.getBoundingClientRect();
+      const leftPadding = parseFloat(style.paddingLeft);
+      const rightPadding = parseFloat(style.paddingRight);
+      const dividerWidth = parseFloat(style.getPropertyValue('--bb-divider-width'));
+      const minTaskWidth = parseFloat(style.getPropertyValue('--bb-task-min-width'));
+      const minWidth = parseFloat(style.getPropertyValue('--bb-sidebar-min-width'));
+      // Preserve the grab point within the handle and use the scene's padded content bounds.
+      sceneResizeBounds.current = {
+        rightEdge: area.right - rightPadding - handle.right + e.clientX,
+        minWidth,
+        maxWidth: Math.min(
+          800,
+          area.width - leftPadding - rightPadding - dividerWidth - minTaskWidth,
+        ),
+      };
+    }
     isResizingRef.current = true;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
@@ -440,6 +472,7 @@ function AppContent() {
   // 允许其他组件触发同一套分隔条拖拽逻辑（例如 AddTaskPanel 顶部也可拖拽）
   useEffect(() => {
     const onExternalResizeStart = () => {
+      sceneResizeBounds.current = null;
       isResizingRef.current = true;
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
@@ -2103,6 +2136,17 @@ function AppContent() {
     );
   }
 
+  const sidebarResizeHandle = (
+    <div
+      data-skin-slot="sidebar-resize"
+      className={`${rightPanelCollapsed ? 'w-4' : 'w-1'} hover:bg-accent/50 cursor-col-resize flex items-center justify-center group shrink-0 transition-colors select-none bg-transparent`}
+      onMouseDown={handleResizeStart}
+      title={t('common.resizeOrCollapse', '拖动调整宽度，向右拖动到底可折叠')}
+    >
+      <div className="w-[2px] h-8 rounded-full transition-colors bg-border group-hover:bg-accent" />
+    </div>
+  );
+
   // 主页面
   return (
     <div
@@ -2188,6 +2232,9 @@ function AppContent() {
           <BuiltinSkinWorkspace
             showAddPanel={showAddTaskPanel}
             onToggleAddPanel={() => setShowAddTaskPanel(!showAddTaskPanel)}
+            sidebarResizeHandle={sidebarResizeHandle}
+            rightPanelWidth={rightPanelWidth}
+            rightPanelCollapsed={rightPanelCollapsed}
           />
         ) : isMobile ? (
           /* 移动端竖屏布局：单列纵向堆叠 */
@@ -2277,15 +2324,7 @@ function AppContent() {
               />
             </div>
 
-            {/* 分隔条 Resizer */}
-            <div
-              className={`${rightPanelCollapsed ? 'w-4' : 'w-1'} hover:bg-accent/50 cursor-col-resize flex items-center justify-center group shrink-0 transition-all select-none bg-transparent`}
-              onMouseDown={handleResizeStart}
-              title={t('common.resizeOrCollapse', '拖动调整宽度，向右拖动到底可折叠')}
-            >
-              {/* 可视化把手 */}
-              <div className="w-[2px] h-8 rounded-full transition-colors bg-border group-hover:bg-accent" />
-            </div>
+            {sidebarResizeHandle}
 
             {/* 右侧信息面板 */}
             {!rightPanelCollapsed && (

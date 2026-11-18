@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { Compass, ListTodo, MoonStar, Route, Sprout, Waves } from 'lucide-react';
@@ -20,9 +21,15 @@ import './workspace-pond.css';
 export function BuiltinSkinWorkspace({
   showAddPanel,
   onToggleAddPanel,
+  sidebarResizeHandle,
+  rightPanelWidth,
+  rightPanelCollapsed,
 }: {
   showAddPanel: boolean;
   onToggleAddPanel: () => void;
+  sidebarResizeHandle: ReactNode;
+  rightPanelWidth: number;
+  rightPanelCollapsed: boolean;
 }) {
   const { t } = useTranslation();
   const mobile = useIsMobile();
@@ -36,6 +43,8 @@ export function BuiltinSkinWorkspace({
   );
   const ocean = skinId === 'deepseek';
   const lunar = skinId === 'bb-dubai';
+  const resizable = lunar && !mobile;
+  const sidebarCollapsed = resizable && rightPanelCollapsed;
   const taskState = getSkinTaskState(!!instance?.isRunning, status);
   const enabled =
     instance?.selectedTasks.filter((task) => task.enabled || task.runOnce).length ?? 0;
@@ -46,6 +55,10 @@ export function BuiltinSkinWorkspace({
       data-skin-slot="workspace"
       data-scene-layout={skinId}
       data-instruments-expanded={mobile || instrumentsExpanded}
+      data-sidebar-collapsed={resizable ? sidebarCollapsed : undefined}
+      style={
+        resizable ? ({ '--bb-sidebar-width': `${rightPanelWidth}px` } as CSSProperties) : undefined
+      }
     >
       <div className="scene-decoration" data-scene-decoration aria-hidden="true" hidden={lunar}>
         <svg
@@ -151,21 +164,26 @@ export function BuiltinSkinWorkspace({
           <BuiltinSkinCompanion />
         </div>
       )}
-      <aside
-        className="scene-instruments"
-        data-skin-slot="sidebar"
-        aria-label={t('skin.instruments')}
-      >
-        <div className="scene-monitor">
-          <ScreenshotPanel />
-        </div>
-        <div className="scene-devices">
-          <ConnectionPanel />
-        </div>
-      </aside>
-      <section className="scene-logbook">
-        <LogsPanel />
-      </section>
+      {resizable && sidebarResizeHandle}
+      {!sidebarCollapsed && (
+        <>
+          <aside
+            className="scene-instruments"
+            data-skin-slot="sidebar"
+            aria-label={t('skin.instruments')}
+          >
+            <div className="scene-monitor">
+              <ScreenshotPanel />
+            </div>
+            <div className="scene-devices">
+              <ConnectionPanel />
+            </div>
+          </aside>
+          <section className="scene-logbook">
+            <LogsPanel />
+          </section>
+        </>
+      )}
     </div>
   );
 }
