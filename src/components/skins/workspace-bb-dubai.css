@@ -344,9 +344,15 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
   grid-row: 3 / 5;
 }
 
-@container bb-toolbar (min-width: 510px) {
-  .scene-workspace--bb-dubai [data-skin-slot='toolbar-label'] {
-    display: inline;
+.scene-workspace--bb-dubai [data-skin-slot='toolbar-label'] {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  @container bb-toolbar (min-width: 510px) {
+    .scene-workspace--bb-dubai [data-skin-slot='toolbar-label'] {
+      display: inline;
+    }
   }
 }
 
