@@ -6,6 +6,16 @@ export default {
     openFailed: 'Failed to open the local file',
     notFound: 'The local file or folder is missing. Check that the application package is complete.',
   },
+  pi: {
+    PI_DISPLAY_OPTIONS_INVALID:
+      'Configure one screenshot scaling mode with positive integer dimensions.',
+    PI_DISPLAY_OPTIONS_UNSUPPORTED:
+      'This MaaFramework does not support the selected screenshot mode. Update the resource package.',
+  },
+  focus: {
+    title: 'Project notification',
+    confirmFailed: 'Could not confirm the notification. Please try again.',
+  },
   // Common
   common: {
     confirm: 'Confirm',
@@ -52,11 +62,33 @@ export default {
   },
 
   // Settings
+  skin: {
+    route: 'Mission route',
+    pondRoute: 'A little path through the day',
+    instances: 'Instances',
+    instruments: 'Devices and screen',
+    deepseekScene: 'The rice submarine',
+    naiwaScene: 'Naiwa’s pond',
+    taskCount: '{{count}} tasks enabled',
+    regionLabel: 'Skin companion',
+    state: {
+      idle: 'Idle',
+      running: 'Running',
+      success: 'Completed',
+      error: 'Failed',
+    },
+    feed: 'Feed rice',
+    poke: 'Play laughter',
+    reducedMotion: 'Motion reduced',
+  },
+
   settings: {
     title: 'Settings',
     appearance: 'Appearance',
     hotkeys: 'Hotkeys',
     general: 'General',
+    scheduledUpdateCheck: 'Scheduled Update Checks',
+    scheduledUpdateCheckTime: 'Daily Check Time (Local Time)',
     taskSettings: 'Task Settings',
     taskSettingsEmpty: 'No settings available to display',
     language: 'Language',
@@ -70,6 +102,17 @@ export default {
     themeDark: 'Dark',
     accentColor: 'Accent Color',
     themeSystem: 'System',
+    skin: 'Built-in Skins',
+    skinHint:
+      'Change the entire workspace palette, panels, character scene and motion. Default restores the standard appearance.',
+    skinAssetLicense: 'Asset source and license',
+    skinDefault: 'Default',
+    skinDeepseek: 'Blue Fat Fish',
+    skinNaiwa: 'Naiwa',
+    skinReducedMotion: 'Reduce skin motion',
+    skinReducedMotionHint:
+      'Reduce continuous animation. Your system’s reduced motion preference also applies.',
+    skinPreview: 'Skin preview',
     showOptionPreview: 'Show Option Preview',
     showOptionPreviewHint: 'Display quick preview of options in the task list',
     openLogDir: 'Open Log Directory',
@@ -111,6 +154,9 @@ export default {
     hotkeysGlobalRegisterFailed: 'Failed to register global hotkey {{combo}}: {{error}}',
     minimizeToTray: 'Minimize to tray on close',
     minimizeToTrayHint: 'Hide to system tray instead of exiting when clicking close button',
+    singleInstance: 'Multi-instance detection',
+    singleInstanceHint:
+      'When already running from the same folder, bring the existing window to the front instead of starting a new instance (takes effect after restart)',
     autoStart: 'Launch at startup',
     autoStartHint: 'Automatically start this application when the system boots',
     autoStartInstance: 'Auto-execute on startup',
@@ -265,6 +311,11 @@ export default {
       resourceFailed: 'Resource loading failed',
       startFailed: 'Failed to start tasks',
       alreadyRunning: 'Tasks are already running or a pre-action is still in progress',
+      taskerStopping: 'Tasks are stopping. Wait for cleanup to finish before starting again.',
+      queueAlreadyRunning:
+        'Tasks are already running. Stop the current queue before starting a new run.',
+      instanceReplaced:
+        'This instance was replaced while processing the request. Select it again and retry.',
       taskNotFound: 'The specified task does not exist or has been deleted',
       noRunnableTasks: 'No runnable tasks; check the task definitions and entry configuration',
       workstationLocked: 'The computer is locked. Please unlock it before running tasks.',
@@ -422,7 +473,6 @@ export default {
     selectController: 'Select Controller',
     adb: 'Android Device',
     win32: 'Windows Window',
-    wlroots: 'WlRoots (Linux)',
     linux: 'Linux',
     portal: 'Portal',
     uinputWidth: 'Width (px)',
@@ -445,6 +495,8 @@ export default {
     connected: 'Connected',
     disconnected: 'Disconnected',
     connectionFailed: 'Connection failed',
+    connectionSuperseded:
+      'The connection request was cancelled because the instance was removed or a newer connection was requested.',
     refreshDevices: 'Refresh Devices',
     refreshWindows: 'Refresh Windows',
     refresh: 'Refresh Devices',
@@ -487,6 +539,7 @@ export default {
 
   // Screenshot preview
   screenshot: {
+    streamFailed: 'Live screenshots stopped after repeated capture failures.',
     title: 'Live Screenshot',
     autoRefresh: 'Auto Refresh',
     noScreenshot: 'No screenshot',
@@ -640,6 +693,20 @@ export default {
 
   // Config self-heal notices
   config: {
+    syncSaveFailed:
+      'The host could not save the configuration. Automatic saves are paused. Export your draft, or fix the problem and retry sync.',
+    draftStorageFailed:
+      'Local draft storage is unavailable. Closing this page will lose these edits. Export your unsaved changes first.',
+    draftExportFailed:
+      'Unable to export the unsaved configuration. The draft is still available; please try again.',
+    syncReloadFailed:
+      'Unable to load the host configuration. Local edits are preserved; retry synchronization before saving.',
+    retrySync: 'Retry sync',
+    unsavedDraft:
+      'Unsaved configuration changes were kept as a local draft. Export it to review and recover your edits.',
+    exportUnsavedDraft: 'Export unsaved changes',
+    syncConflict:
+      'Configuration changed elsewhere or could not be saved. Reloading the host configuration; please review it before editing again.',
     recoveredFromBackup:
       'The config file was corrupted and has been restored from the {{time}} backup',
     recoveryFailed:
@@ -759,6 +826,7 @@ export default {
     installComplete: 'Installation Complete',
     installFailed: 'Installation Failed',
     installErrors: {
+      gzipValidationFailed: 'Failed to validate the gzip archive',
       packageMissing: 'Update package not found. Please download it again.',
       packageCorrupt: 'The update package is corrupted. Please download it again. ({{detail}})',
       extractFailed:
@@ -767,6 +835,8 @@ export default {
       exeMissing:
         'The program file is missing. It may have been deleted or quarantined by security software. Add the installation folder to the security software allowlist, then download the update again.',
     },
+    signedAppUpdateUnsupported:
+      'In-place updates inside a macOS app bundle are unavailable. Quit the app and install the complete new version; manually replaced files require re-signing. The downloaded update is kept.',
     installNow: 'Install Now',
     installUpdate: 'Install Update',
     installStages: {

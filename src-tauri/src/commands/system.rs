@@ -207,6 +207,9 @@ pub fn restart_as_admin(app_handle: tauri::AppHandle) -> Result<(), String> {
 
         info!("restart_as_admin: restarting with admin privileges");
 
+        // 先释放单实例锁：当前进程异步退出，若锁仍被占用，新进程会被当成重复启动
+        crate::single_instance::release();
+
         let result = ShellExecuteEx(&SHELLEXECUTEINFO {
             file: &exe_path_str,
             verb: Option::from("runas"),
@@ -217,6 +220,10 @@ pub fn restart_as_admin(app_handle: tauri::AppHandle) -> Result<(), String> {
 
         // ShellExecuteEx 返回 Result：Ok 表示成功，Err 表示失败
         if let Err(e) = result {
+            // 提权失败，当前进程继续运行，重新获取单实例锁
+            if !crate::single_instance::reacquire() {
+                warn!("restart_as_admin: 重新获取单实例锁失败，当前进程已无单实例保护");
+            }
             Err(format!("以管理员身份启动失败: 错误码 {}", e.raw()))
         } else {
             info!("restart_as_admin: new process started, exiting current");
@@ -538,15 +545,7 @@ pub fn set_pre_action_stop(
     instance_id: String,
     stop: bool,
 ) -> Result<(), String> {
-    let mut requests = state
-        .pre_action_stop_requests
-        .lock()
-        .map_err(|e| e.to_string())?;
-    if stop {
-        requests.insert(instance_id);
-    } else {
-        requests.remove(&instance_id);
-    }
+    state.pre_action_stop_requests.set(instance_id, stop);
     Ok(())
 }
 
@@ -589,6 +588,10 @@ pub async fn run_action(
     }
 
     if wait_for_exit {
+        let stop = state.pre_action_stop_requests.subscribe(&instance_id);
+        if *stop.borrow() {
+            return Err("MXU_PRE_ACTION_CANCELLED".to_string());
+        }
         let mut child = cmd
             .spawn()
             .map_err(|e| format!("Failed to run action: {} - {}", program, e))?;
@@ -603,15 +606,7 @@ pub async fn run_action(
                 return Ok(exit_code);
             }
 
-            let stop_requested = {
-                let requests = state
-                    .pre_action_stop_requests
-                    .lock()
-                    .map_err(|e| e.to_string())?;
-                requests.contains(&instance_id)
-            };
-
-            if stop_requested {
+            if *stop.borrow() {
                 info!("run_action wait cancelled by stop request: {}", instance_id);
                 // 停止只中断等待，不强制终止前置程序；交给后台线程 wait 以避免子进程泄漏。
                 std::thread::spawn(move || {
@@ -647,9 +642,23 @@ pub async fn run_pretask(
     args: Vec<String>,
     cwd: Option<String>,
 ) -> Result<i32, String> {
+    run_pretask_impl(app, &state, instance_id, program, args, cwd).await
+}
+
+pub async fn run_pretask_impl(
+    app: tauri::AppHandle,
+    state: &Arc<MaaState>,
+    instance_id: String,
+    program: String,
+    args: Vec<String>,
+    cwd: Option<String>,
+) -> Result<i32, String> {
     info!(
-        "run_pretask: instance_id={}, program={}, args={:?}, cwd={:?}",
-        instance_id, program, args, cwd
+        "run_pretask: instance_id={}, program={}, arg_count={}, cwd={:?}",
+        instance_id,
+        program,
+        args.len(),
+        cwd
     );
 
     // Windows 下相对可执行路径会相对“父进程当前目录”解析，而非下方设置的 `current_dir`，
@@ -684,6 +693,10 @@ pub async fn run_pretask(
         }
     }
 
+    let stop = state.pre_action_stop_requests.subscribe(&instance_id);
+    if *stop.borrow() {
+        return Err("MXU_PRE_ACTION_CANCELLED".to_string());
+    }
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("Failed to run pretask: {} - {}", program, e))?;
@@ -722,6 +735,7 @@ pub async fn run_pretask(
         ));
     }
 
+    let mut kill_requested = false;
     loop {
         if let Some(status) = child
             .try_wait()
@@ -738,30 +752,28 @@ pub async fn run_pretask(
             }
             output_batcher.flush();
 
+            if *stop.borrow() {
+                return Err("MXU_PRE_ACTION_CANCELLED".to_string());
+            }
             return Ok(exit_code);
         }
 
-        let stop_requested = {
-            let requests = state
-                .pre_action_stop_requests
-                .lock()
-                .map_err(|e| e.to_string())?;
-            requests.contains(&instance_id)
-        };
-
-        if stop_requested {
+        if !kill_requested && *stop.borrow() {
             info!(
                 "run_pretask wait cancelled by stop request: {}",
                 instance_id
             );
             // pretask 由项目声明、受 MXU 管理，与前置程序不同，停止时直接终止，避免其在后台继续操作
             if let Err(e) = child.kill() {
-                warn!("Failed to kill pretask {}: {}", program, e);
+                // The process can exit between try_wait and kill.
+                if !matches!(child.try_wait(), Ok(Some(_))) {
+                    std::thread::spawn(move || {
+                        let _ = child.wait();
+                    });
+                    return Err(format!("Failed to kill pretask {}: {}", program, e));
+                }
             }
-            std::thread::spawn(move || {
-                let _ = child.wait();
-            });
-            return Err("MXU_PRE_ACTION_CANCELLED".to_string());
+            kill_requested = true;
         }
 
         sleep(Duration::from_millis(100)).await;

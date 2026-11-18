@@ -6,6 +6,11 @@ export default {
     openFailed: '打开本地文件失败',
     notFound: '本地文件或目录不存在，请检查软件包是否完整',
   },
+  pi: {
+    PI_DISPLAY_OPTIONS_INVALID: '请只配置一种截图缩放模式，并使用正整数尺寸。',
+    PI_DISPLAY_OPTIONS_UNSUPPORTED: '当前 MaaFramework 不支持此截图模式，请更新资源包。',
+  },
+  focus: { title: '项目信息', confirmFailed: '确认失败，请重试。' },
   // 通用
   common: {
     confirm: '确定',
@@ -51,12 +56,34 @@ export default {
     close: '关闭',
   },
 
+  skin: {
+    route: '任务航线',
+    pondRoute: '沿着水路，慢慢完成',
+    instances: '实例导航',
+    instruments: '设备与画面',
+    deepseekScene: '白饭潜航舱',
+    naiwaScene: '奶蛙的池塘',
+    taskCount: '{{count}} 项任务已启用',
+    regionLabel: '皮肤伙伴',
+    state: {
+      idle: '待机中',
+      running: '执行中',
+      success: '已完成',
+      error: '执行失败',
+    },
+    feed: '投喂白饭',
+    poke: '播放大笑',
+    reducedMotion: '已减少动态效果',
+  },
+
   // 设置
   settings: {
     title: '设置',
     appearance: '外观',
     hotkeys: '快捷键',
     general: '通用',
+    scheduledUpdateCheck: '定时检查更新',
+    scheduledUpdateCheckTime: '每日检查时间（本地时间）',
     taskSettings: '任务设置',
     taskSettingsEmpty: '当前没有可显示的设置项',
     language: '语言',
@@ -69,6 +96,15 @@ export default {
     themeLight: '浅色',
     themeDark: '深色',
     themeSystem: '系统',
+    skin: '内置皮肤',
+    skinHint: '整套界面的配色、面板、角色场景与动效一起切换。默认可恢复原有外观。',
+    skinAssetLicense: '素材来源与许可',
+    skinDefault: '默认',
+    skinDeepseek: '蓝色大肥鱼',
+    skinNaiwa: '奶蛙',
+    skinReducedMotion: '减少皮肤动效',
+    skinReducedMotionHint: '减少连续动作，同时遵循系统的减少动态效果设置。',
+    skinPreview: '皮肤预览',
     accentColor: '强调色',
     showOptionPreview: '显示选项预览',
     showOptionPreviewHint: '在任务列表中显示选项的快捷预览信息',
@@ -110,6 +146,8 @@ export default {
     hotkeysGlobalRegisterFailed: '全局快捷键 {{combo}} 注册失败：{{error}}',
     minimizeToTray: '关闭时最小化到托盘',
     minimizeToTrayHint: '点击关闭按钮时隐藏到系统托盘而非退出程序',
+    singleInstance: '多开检测',
+    singleInstanceHint: '同一目录已在运行时不再启动新实例，改为唤起已有窗口（重启后生效）',
     autoStart: '开机自启动',
     autoStartHint: '系统启动时自动运行本程序',
     autoStartInstance: '启动后自动执行',
@@ -255,6 +293,9 @@ export default {
       resourceFailed: '资源加载失败',
       startFailed: '任务启动失败',
       alreadyRunning: '任务已在运行或正在执行前置动作',
+      taskerStopping: '任务正在停止，请等待收尾完成后再启动。',
+      queueAlreadyRunning: '任务已在运行，请先停止当前队列再开始新一轮。',
+      instanceReplaced: '处理请求时实例已被替换，请重新选择实例后重试。',
       taskNotFound: '指定的任务不存在或已被删除',
       noRunnableTasks: '没有可执行的任务，请检查任务定义和入口配置',
       workstationLocked: '检测到电脑处于锁屏状态，请先解锁后再运行任务',
@@ -408,7 +449,6 @@ export default {
     selectController: '选择控制器',
     adb: 'Android 设备',
     win32: 'Windows 窗口',
-    wlroots: 'WlRoots (Linux)',
     linux: 'Linux',
     portal: 'Portal',
     uinputWidth: '宽 (px)',
@@ -428,6 +468,7 @@ export default {
     connected: '已连接',
     disconnected: '未连接',
     connectionFailed: '连接失败',
+    connectionSuperseded: '实例已移除或已发起新的连接，原连接请求已取消。',
     refreshDevices: '刷新设备',
     refreshWindows: '刷新窗口',
     refresh: '刷新设备',
@@ -469,6 +510,7 @@ export default {
 
   // 截图预览
   screenshot: {
+    streamFailed: '截图连续失败，已停止',
     title: '实时截图',
     autoRefresh: '自动刷新',
     noScreenshot: '暂无截图',
@@ -617,6 +659,14 @@ export default {
 
   // 配置自愈提示
   config: {
+    syncSaveFailed: '主机未能保存配置，自动保存已暂停。请导出草稿，或修复问题后重新同步。',
+    draftStorageFailed: '本地草稿存储不可用，关闭页面会丢失这些更改。请先导出未同步配置。',
+    draftExportFailed: '导出未同步配置失败，草稿已保留，请重试。',
+    syncReloadFailed: '无法读取主机配置，更改已保留在本地，重新同步后才能保存。',
+    retrySync: '重新同步',
+    unsavedDraft: '有未同步的配置更改，已保留为本地草稿。可导出后对照恢复。',
+    exportUnsavedDraft: '导出未同步配置',
+    syncConflict: '配置已在其他客户端更新或同步失败，正在重新加载主机配置。请确认后重新编辑。',
     recoveredFromBackup: '配置文件已损坏，已自动恢复到 {{time}} 的备份',
     recoveryFailed: '配置文件已损坏且没有可用备份，已重置为默认配置',
   },
@@ -732,6 +782,7 @@ export default {
     installComplete: '安装完成',
     installFailed: '安装失败',
     installErrors: {
+      gzipValidationFailed: 'gzip 压缩包校验失败',
       packageMissing: '更新包不存在，请重新下载',
       packageCorrupt: '更新包已损坏，请重新下载（{{detail}}）',
       extractFailed: '解压更新包失败，可能被安全软件拦截（{{detail}}）',
@@ -739,6 +790,8 @@ export default {
       exeMissing:
         '程序文件已丢失，可能被安全软件删除或隔离。请将安装目录加入安全软件白名单后重新下载更新',
     },
+    signedAppUpdateUnsupported:
+      '无法在应用内覆盖更新 macOS 应用包。请退出应用并安装完整的新版本；手动替换文件后需重新签名。已下载的更新包会保留。',
     installNow: '立即安装',
     installUpdate: '安装更新',
     installStages: {

@@ -1,3 +1,4 @@
+import { PiIcon } from './PiContent';
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
@@ -30,7 +31,6 @@ import type { SelectedTask, CaseItem } from '@/types/interface';
 import { isMxuSpecialTask, getMxuSpecialTask, findMxuOptionByKey } from '@/types/specialTasks';
 import { isPretaskName, getPretaskItem, buildPretaskDef } from '@/types/pretasks';
 import { getInterfaceLangKey } from '@/i18n';
-import { stripInlineRichText } from '@/utils/richText';
 import clsx from 'clsx';
 import { loggers } from '@/utils/logger';
 import { isPasswordInput } from '@/utils/passwordOptionValues';
@@ -49,9 +49,6 @@ function OptionPreviewTag({
   const truncateText = (text: string, max: number) =>
     text.length > max ? text.slice(0, max) + '…' : text;
 
-  // label 可能含行内 Markdown（图标等），预览标签空间有限，统一按纯文本处理
-  const plainLabel = stripInlineRichText(label);
-
   return (
     <span
       className={clsx(
@@ -59,12 +56,12 @@ function OptionPreviewTag({
         'text-text-tertiary',
         'max-w-[140px]',
       )}
-      title={`${plainLabel}: ${value}`}
+      title={`${label}: ${value}`}
     >
       {type === 'switch' ? (
         // Switch 类型：显示选项名 + 状态圆点
         <>
-          <span className="truncate">{truncateText(plainLabel, 6)}</span>
+          <span className="truncate">{truncateText(label, 6)}</span>
           <span
             className={clsx(
               'w-1.5 h-1.5 rounded-full flex-shrink-0',
@@ -75,7 +72,7 @@ function OptionPreviewTag({
       ) : (
         // Select/Input 类型：显示选项名: 值
         <>
-          <span className="truncate flex-shrink-0">{truncateText(plainLabel, 4)}</span>
+          <span className="truncate flex-shrink-0">{truncateText(label, 4)}</span>
           <span className="flex-shrink-0">:</span>
           <span className="truncate">{truncateText(value, 6)}</span>
         </>
@@ -353,6 +350,7 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
 
   // 获取实例运行状态
   const instance = instances.find((i) => i.id === instanceId);
+  const sceneTaskIndex = instance?.selectedTasks.findIndex((entry) => entry.id === task.id) ?? -1;
   const isInstanceRunning = instance?.isRunning || false;
 
   // 获取任务定义 - 支持 MXU 内置特殊任务与 pretask 前置任务
@@ -841,6 +839,10 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
     return (
       <div
         ref={setRefs}
+        data-skin-slot="task-item"
+        data-task-status={taskRunStatus}
+        data-task-index={sceneTaskIndex}
+        data-expanded={task.expanded}
         style={style}
         onContextMenu={handleContextMenu}
         className={clsx(
@@ -876,6 +878,10 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
   return (
     <div
       ref={setRefs}
+      data-skin-slot="task-item"
+      data-task-status={taskRunStatus}
+      data-task-index={sceneTaskIndex}
+      data-expanded={task.expanded}
       style={style}
       onContextMenu={handleContextMenu}
       className={clsx(
@@ -885,6 +891,9 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
         isAnimating && 'animate-task-slide-in',
       )}
     >
+      <span className="skin-task-marker" aria-hidden="true">
+        {String(sceneTaskIndex + 1).padStart(2, '0')}
+      </span>
       {/* 任务状态指示器（左侧竖条） */}
       {taskRunStatus !== 'idle' && (
         <div
@@ -897,7 +906,7 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
       )}
 
       {/* 任务头部 */}
-      <div className="flex items-center gap-2 p-3">
+      <div data-skin-slot="task-item-head" className="flex items-center gap-2 p-3">
         {/* 拖拽手柄 */}
         <div
           {...attributes}
@@ -938,6 +947,7 @@ export function TaskItem({ instanceId, task }: TaskItemProps) {
           )}
         </div>
 
+        <PiIcon icon={taskDef?.icon} />
         {/* 任务名称 + 展开区域容器 */}
         <div className="flex-1 flex items-center min-w-0">
           {isEditing ? (

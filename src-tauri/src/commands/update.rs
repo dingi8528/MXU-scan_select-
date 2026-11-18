@@ -9,8 +9,43 @@ use std::time::Duration;
 use log::{error, info, warn};
 use serde::Serialize;
 
-use super::file_ops::get_exe_dir;
 use super::types::ChangesJson;
+use super::utils::{get_app_data_dir, get_exe_directory};
+
+/// 包内覆盖更新会破坏资源封印和宿主通知身份，必须使用完整应用包安装流程。
+#[tauri::command]
+pub fn validate_update_target(target_dir: String) -> Result<(), String> {
+    ensure_update_path(std::path::Path::new(&target_dir))
+}
+
+fn ensure_update_path(path: &std::path::Path) -> Result<(), String> {
+    #[cfg(any(target_os = "macos", test))]
+    {
+        // 同时检查词法路径和最近的已存在父目录，覆盖新目录与资源符号链接。
+        let in_bundle = |candidate: &std::path::Path| {
+            candidate.ancestors().any(|ancestor| {
+                ancestor
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("app"))
+                    && ancestor.join("Contents/Info.plist").is_file()
+            })
+        };
+        if in_bundle(path) {
+            return Err("SIGNED_APP_UPDATE_UNSUPPORTED".into());
+        }
+        for ancestor in path.ancestors() {
+            if let Ok(resolved) = ancestor.canonicalize() {
+                if in_bundle(&resolved) {
+                    return Err("SIGNED_APP_UPDATE_UNSUPPORTED".into());
+                }
+                break;
+            }
+        }
+    }
+    #[cfg(not(any(target_os = "macos", test)))]
+    let _ = path;
+    Ok(())
+}
 
 /// cache/old 目录锁：全量更新期间旧文件作为回滚备份放在 cache/old，
 /// 启动时的异步清理必须与之互斥，避免备份在回滚前被删掉
@@ -27,6 +62,9 @@ pub struct ExtractError {
     message: String,
     /// 是否为更新包本身损坏（截断、校验失败等），损坏的包需要重新下载
     corrupt: bool,
+    /// 可由前端本地化的错误标识；message 保留原始诊断。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    code: Option<&'static str>,
 }
 
 impl ExtractError {
@@ -34,6 +72,7 @@ impl ExtractError {
         Self {
             message,
             corrupt: true,
+            code: None,
         }
     }
 
@@ -41,6 +80,7 @@ impl ExtractError {
         Self {
             message,
             corrupt: false,
+            code: None,
         }
     }
 }
@@ -75,6 +115,7 @@ fn zip_read_error(message: String, e: &zip::result::ZipError) -> ExtractError {
 /// 解压压缩文件到指定目录，支持 zip 和 tar.gz/tgz 格式
 #[tauri::command]
 pub fn extract_zip(zip_path: String, dest_dir: String) -> Result<(), ExtractError> {
+    ensure_update_path(std::path::Path::new(&dest_dir)).map_err(ExtractError::other)?;
     info!("extract_zip called: {} -> {}", zip_path, dest_dir);
 
     let path_lower = zip_path.to_lowercase();
@@ -165,6 +206,16 @@ fn extract_tar_gz(tar_path: &str, dest_dir: &str) -> Result<(), ExtractError> {
         }
     })?;
 
+    // tar 在结束块处停止；读完 gzip 才会校验尾部的 CRC 和解压长度。
+    std::io::copy(&mut archive.into_inner(), &mut std::io::sink()).map_err(|e| {
+        warn!("gzip footer validation failed: {}", e);
+        ExtractError {
+            message: e.to_string(),
+            corrupt: is_corrupt_data_error(&e),
+            code: Some("gzipValidationFailed"),
+        }
+    })?;
+
     info!("extract_tar_gz success");
     Ok(())
 }
@@ -187,40 +238,83 @@ pub fn check_changes_json(extract_dir: String) -> Result<Option<ChangesJson>, St
     Ok(Some(changes))
 }
 
-/// 递归清理目录内容，逐个删除文件和空目录，返回 (成功数, 失败数)
+/// 递归清理目录内容，逐个删除文件和空目录，返回 (成功数, 失败数)。
+/// 目录链接只删除链接本身，单个条目失败后继续清理其余条目。
 pub fn cleanup_dir_contents(dir: &std::path::Path) -> (usize, usize) {
+    let metadata = match dir.symlink_metadata() {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return (0, 0),
+        Err(_) => return (0, 1),
+    };
+    // 与 WebView2 运行时目录检查一致，Windows 上同时识别 junction 等重解析点。
+    #[cfg(windows)]
+    let directory_link = {
+        use std::os::windows::fs::MetadataExt;
+        const DIRECTORY_REPARSE_POINT: u32 = 0x10 | 0x400;
+        metadata.file_attributes() & DIRECTORY_REPARSE_POINT == DIRECTORY_REPARSE_POINT
+    };
+    #[cfg(not(windows))]
+    let directory_link = false;
+
+    if directory_link || metadata.file_type().is_symlink() {
+        let result = if directory_link {
+            std::fs::remove_dir(dir)
+        } else {
+            std::fs::remove_file(dir)
+        };
+        return match result {
+            Ok(()) => (1, 0),
+            Err(_) => (0, 1),
+        };
+    }
+
     let mut deleted = 0;
     let mut failed = 0;
 
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                // 递归清理子目录
-                let (d, f) = cleanup_dir_contents(&path);
-                deleted += d;
-                failed += f;
-                // 尝试删除空目录
-                if std::fs::remove_dir(&path).is_ok() {
-                    deleted += 1;
-                }
-            } else {
-                // 删除文件
-                match std::fs::remove_file(&path) {
-                    Ok(()) => deleted += 1,
-                    Err(_) => failed += 1,
-                }
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(_) => return (0, 1),
+    };
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+        let path = entry.path();
+        // file_type 不跟随链接，目录重解析点在递归入口检查后只删除链接本身。
+        let file_type = match entry.file_type() {
+            Ok(file_type) => file_type,
+            Err(_) => {
+                failed += 1;
+                continue;
+            }
+        };
+        if file_type.is_dir() || file_type.is_symlink() {
+            let (d, f) = cleanup_dir_contents(&path);
+            deleted += d;
+            failed += f;
+        } else {
+            match std::fs::remove_file(&path) {
+                Ok(()) => deleted += 1,
+                Err(_) => failed += 1,
             }
         }
     }
 
-    // 尝试删除根目录本身
-    let _ = std::fs::remove_dir(dir);
+    match std::fs::remove_dir(dir) {
+        Ok(()) => deleted += 1,
+        // 子条目失败导致目录非空时，其失败已经计数。
+        Err(_) if failed == 0 => failed += 1,
+        Err(_) => {}
+    }
 
     (deleted, failed)
 }
 
-/// 将文件或目录移动到程序目录下的 cache/old 文件夹，处理重名冲突
+/// 将文件或目录移动到 cache/old 文件夹，处理重名冲突
 /// 供前端调用，统一文件移动逻辑
 #[tauri::command]
 pub fn move_file_to_old(file_path: String) -> Result<(), String> {
@@ -230,8 +324,23 @@ pub fn move_file_to_old(file_path: String) -> Result<(), String> {
 
 /// 获取 cache/old 目录路径（启动清理也使用此路径，保证与移入旧文件的位置一致）
 pub fn get_old_dir() -> Result<PathBuf, String> {
-    let exe_dir = get_exe_dir()?;
-    Ok(Path::new(&exe_dir).join("cache").join("old"))
+    old_dir_for_executable(&get_exe_directory()?, get_app_data_dir)
+}
+
+fn old_dir_for_executable(
+    exe_dir: &Path,
+    app_data_dir: impl FnOnce() -> Result<PathBuf, String>,
+) -> Result<PathBuf, String> {
+    // macOS 的可执行文件可能在已签名的 .app 内，归档和回滚备份必须放在包外。
+    // 包外便携程序仍使用同卷目录，避免旧文件移动到用户目录时跨文件系统失败。
+    let root = if ensure_update_path(exe_dir).is_err() {
+        app_data_dir()?
+    } else {
+        exe_dir.to_path_buf()
+    };
+    let old_dir = root.join("cache").join("old");
+    ensure_update_path(&old_dir)?;
+    Ok(old_dir)
 }
 
 /// 清空 cache/old 目录，返回 (成功数, 失败数)。
@@ -243,7 +352,7 @@ fn clear_old_folder(old_dir: &Path) -> (usize, usize) {
     cleanup_dir_contents(old_dir)
 }
 
-/// 将文件或目录移动到程序目录下的 cache/old 文件夹，处理重名冲突（内部函数）
+/// 将文件或目录移动到 cache/old 文件夹，处理重名冲突（内部函数）
 ///
 /// 不在这里清理 cache/old：全量更新期间 cache/old 中的文件是回滚备份，
 /// 清理只在更新开始时和程序启动时进行
@@ -253,6 +362,11 @@ pub fn move_to_old_folder(source: &std::path::Path) -> Result<(), String> {
 
 /// 将文件或目录移动到 cache/old，返回移动后的路径（源不存在时返回 None）
 fn move_to_old_folder_dest(source: &Path) -> Result<Option<PathBuf>, String> {
+    move_to_old_folder_in_dir(source, &get_old_dir()?)
+}
+
+fn move_to_old_folder_in_dir(source: &Path, old_dir: &Path) -> Result<Option<PathBuf>, String> {
+    ensure_update_path(source)?;
     // 只有确认不存在才跳过；其他错误（如权限不足）不能当作不存在，否则回滚时无从还原
     match source.symlink_metadata() {
         Ok(_) => {}
@@ -260,8 +374,8 @@ fn move_to_old_folder_dest(source: &Path) -> Result<Option<PathBuf>, String> {
         Err(e) => return Err(format!("无法读取 [{}] 的文件信息: {}", source.display(), e)),
     }
 
-    let old_dir = get_old_dir()?;
-    std::fs::create_dir_all(&old_dir)
+    ensure_update_path(old_dir)?;
+    std::fs::create_dir_all(old_dir)
         .map_err(|e| format!("无法创建 old 目录 [{}]: {}", old_dir.display(), e))?;
 
     let file_name = source
@@ -354,6 +468,7 @@ pub fn apply_incremental_update(
     target_dir: String,
     deleted_files: Vec<String>,
 ) -> Result<(), String> {
+    ensure_update_path(std::path::Path::new(&target_dir))?;
     info!("apply_incremental_update called");
     info!("extract_dir: {}, target_dir: {}", extract_dir, target_dir);
     info!("deleted_files: {:?}", deleted_files);
@@ -405,6 +520,10 @@ pub fn apply_incremental_update(
 /// 保证安装目录要么全部是新版本，要么保持更新前的状态
 #[tauri::command]
 pub fn apply_full_update(extract_dir: String, target_dir: String) -> Result<(), ApplyUpdateError> {
+    ensure_update_path(std::path::Path::new(&target_dir)).map_err(|message| ApplyUpdateError {
+        message,
+        rolled_back: false,
+    })?;
     info!("apply_full_update called");
     info!("extract_dir: {}, target_dir: {}", extract_dir, target_dir);
 
@@ -675,6 +794,8 @@ fn copy_dir_recursive(src: &std::path::Path, dst: &std::path::Path) -> Result<()
 /// 2. 删除 cache_dir 下所有 *.downloading 临时文件
 #[tauri::command]
 pub fn cleanup_update_artifacts(target_dir: String, cache_dir: String) -> Result<(), String> {
+    ensure_update_path(std::path::Path::new(&target_dir))?;
+    ensure_update_path(std::path::Path::new(&cache_dir))?;
     // 删除 target_dir/changes.json
     let changes_path = std::path::Path::new(&target_dir).join("changes.json");
     if changes_path.exists() {
@@ -709,6 +830,7 @@ pub fn cleanup_update_artifacts(target_dir: String, cache_dir: String) -> Result
 /// 清理临时解压目录
 #[tauri::command]
 pub fn cleanup_extract_dir(extract_dir: String) -> Result<(), String> {
+    ensure_update_path(std::path::Path::new(&extract_dir))?;
     info!("cleanup_extract_dir: {}", extract_dir);
 
     let path = std::path::Path::new(&extract_dir);
@@ -728,6 +850,7 @@ pub fn fallback_update(
     target_dir: String,
     new_version: String,
 ) -> Result<String, String> {
+    ensure_update_path(std::path::Path::new(&target_dir))?;
     info!(
         "fallback_update called: extract_dir={}, target_dir={}, new_version={}",
         extract_dir, target_dir, new_version
@@ -809,5 +932,396 @@ pub fn current_exe_exists() -> bool {
         }
         // 无法获取路径时不阻止重启，交给原有流程处理
         Err(_) => true,
+    }
+}
+
+#[cfg(test)]
+mod gzip_tests {
+    use super::*;
+    use std::io::Write;
+
+    struct Fixture(PathBuf);
+
+    impl Fixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "mxu-gzip-test-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&root).unwrap();
+            Self(root)
+        }
+
+        fn extract(&self, bytes: &[u8]) -> Result<(), ExtractError> {
+            let package = self.0.join("package.tgz");
+            std::fs::write(&package, bytes).unwrap();
+            extract_zip(
+                package.to_string_lossy().into_owned(),
+                self.0.join("extracted").to_string_lossy().into_owned(),
+            )
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn package() -> Vec<u8> {
+        let mut tar = tar::Builder::new(Vec::new());
+        let mut header = tar::Header::new_gnu();
+        let content = b"resource content";
+        header.set_size(content.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar.append_data(&mut header, "resource.txt", &content[..])
+            .unwrap();
+        let mut bytes = tar.into_inner().unwrap();
+        // Real writers can pad tar beyond its end-of-archive blocks.
+        // Ensure unpack stops before the gzip decoder reaches the footer.
+        bytes.resize(bytes.len() + 32 * 1024, 0);
+        let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        gz.write_all(&bytes).unwrap();
+        gz.finish().unwrap()
+    }
+
+    #[test]
+    fn valid_padded_gzip_extracts_resource() {
+        let fixture = Fixture::new();
+        fixture.extract(&package()).unwrap();
+        assert_eq!(
+            std::fs::read(fixture.0.join("extracted/resource.txt")).unwrap(),
+            b"resource content"
+        );
+    }
+
+    #[test]
+    fn corrupted_gzip_footer_rejects_an_otherwise_complete_tar() {
+        // CRC-32 and ISIZE occupy the last eight bytes of a gzip member.
+        for offset in [8, 4] {
+            let fixture = Fixture::new();
+            let mut bytes = package();
+            let index = bytes.len() - offset;
+            bytes[index] ^= 1;
+            let error = fixture.extract(&bytes).unwrap_err();
+            assert!(error.corrupt, "{}", error.message);
+            let payload = serde_json::to_value(&error).unwrap();
+            assert_eq!(payload["code"], "gzipValidationFailed");
+            assert!(payload["message"].as_str().is_some_and(|s| !s.is_empty()));
+            // Entries can be written before footer validation fails. The command
+            // must still reject the package so the caller cannot apply this tree.
+            assert_eq!(
+                std::fs::read(fixture.0.join("extracted/resource.txt")).unwrap(),
+                b"resource content"
+            );
+        }
+    }
+
+    #[test]
+    fn missing_gzip_footer_is_corrupt() {
+        let fixture = Fixture::new();
+        let mut bytes = package();
+        bytes.truncate(bytes.len() - 8);
+        let error = fixture.extract(&bytes).unwrap_err();
+        assert!(error.corrupt);
+        assert_eq!(error.code, Some("gzipValidationFailed"));
+    }
+
+    #[test]
+    fn extraction_destination_failure_remains_an_io_error() {
+        let fixture = Fixture::new();
+        std::fs::write(fixture.0.join("extracted"), b"existing file").unwrap();
+        let error = fixture.extract(&package()).unwrap_err();
+        assert!(!error.corrupt);
+        assert!(serde_json::to_value(error).unwrap().get("code").is_none());
+    }
+}
+
+#[cfg(test)]
+mod bundle_update_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    struct Fixture(PathBuf);
+    impl Fixture {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "mxu-update-policy-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn app_bundle_update_entry_points_refuse_before_mutating_files() {
+        let temp = Fixture::new();
+        let bundle = temp.0.join("Host.app");
+        let target = bundle.join("Contents/MacOS");
+        let resources = bundle.join("Contents/Resources/MXU-portable");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::create_dir_all(&resources).unwrap();
+        std::fs::write(bundle.join("Contents/Info.plist"), b"original identity").unwrap();
+        std::fs::write(target.join("interface.json"), b"original resource").unwrap();
+        let target_string = target.to_string_lossy().into_owned();
+        let missing_archive = temp.0.join("missing.zip").to_string_lossy().into_owned();
+        for result in [
+            validate_update_target(target_string.clone()),
+            validate_update_target(resources.join("new/version").to_string_lossy().into_owned()),
+            apply_incremental_update(
+                missing_archive.clone(),
+                target_string.clone(),
+                vec!["interface.json".into()],
+            ),
+            fallback_update(missing_archive.clone(), target_string.clone(), "2".into()).map(|_| ()),
+            cleanup_extract_dir(target_string.clone()),
+            cleanup_update_artifacts(target_string.clone(), target_string.clone()),
+            move_to_old_folder(&target.join("interface.json")),
+            move_to_old_folder_dest(&target.join("interface.json")).map(|_| ()),
+        ] {
+            assert_eq!(result.unwrap_err(), "SIGNED_APP_UPDATE_UNSUPPORTED");
+        }
+        let extract_error =
+            extract_zip(missing_archive.clone(), target_string.clone()).unwrap_err();
+        assert_eq!(extract_error.message, "SIGNED_APP_UPDATE_UNSUPPORTED");
+        assert!(!extract_error.corrupt);
+        let apply_error = apply_full_update(missing_archive, target_string).unwrap_err();
+        assert_eq!(apply_error.message, "SIGNED_APP_UPDATE_UNSUPPORTED");
+        assert!(!apply_error.rolled_back);
+        assert_eq!(
+            std::fs::read(target.join("interface.json")).unwrap(),
+            b"original resource"
+        );
+        assert_eq!(
+            std::fs::read(bundle.join("Contents/Info.plist")).unwrap(),
+            b"original identity"
+        );
+        assert_eq!(std::fs::read_dir(&target).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn external_portable_directory_updates_still_work() {
+        let temp = Fixture::new();
+        let source = temp.0.join("extracted");
+        let target = temp.0.join("portable");
+        std::fs::create_dir_all(&source).unwrap();
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::write(source.join("resource.json"), b"new resource").unwrap();
+        validate_update_target(target.to_string_lossy().into_owned()).unwrap();
+        apply_full_update(
+            source.to_string_lossy().into_owned(),
+            target.to_string_lossy().into_owned(),
+        )
+        .unwrap();
+        assert_eq!(
+            std::fs::read(target.join("resource.json")).unwrap(),
+            b"new resource"
+        );
+    }
+
+    #[test]
+    fn bundle_archives_use_app_data_while_portable_archives_stay_with_the_executable() {
+        let temp = Fixture::new();
+        let macos = temp.0.join("Host.app/Contents/MacOS");
+        let app_data = temp.0.join("home/Library/Application Support/MXU");
+        let portable = temp.0.join("external-volume/portable");
+        std::fs::create_dir_all(&macos).unwrap();
+        std::fs::write(macos.parent().unwrap().join("Info.plist"), b"identity").unwrap();
+        assert_eq!(
+            old_dir_for_executable(&macos, || Ok(app_data.clone())).unwrap(),
+            app_data.join("cache/old")
+        );
+        assert_eq!(
+            old_dir_for_executable(&portable, || panic!(
+                "portable archives do not use app data"
+            ))
+            .unwrap(),
+            portable.join("cache/old")
+        );
+        // 即便应用数据目录被错误设置在包内，也不允许归档或清理写入该目录。
+        assert_eq!(
+            old_dir_for_executable(&macos, || Ok(macos.clone())).unwrap_err(),
+            "SIGNED_APP_UPDATE_UNSUPPORTED"
+        );
+    }
+
+    #[test]
+    fn external_downloads_are_archived_and_rotated_without_overwriting() {
+        let temp = Fixture::new();
+        let source = temp.0.join("download.zip");
+        let archive = temp.0.join("data/cache/old");
+
+        std::fs::write(&source, b"original download").unwrap();
+        let first = move_to_old_folder_in_dir(&source, &archive)
+            .unwrap()
+            .unwrap();
+        assert_eq!(first, archive.join("download.zip"));
+        assert!(!source.exists());
+
+        std::fs::write(&source, b"replacement download").unwrap();
+        let second = move_to_old_folder_in_dir(&source, &archive)
+            .unwrap()
+            .unwrap();
+        assert_eq!(second, archive.join("download.zip.bak001"));
+        assert!(!source.exists());
+        assert_eq!(std::fs::read(&first).unwrap(), b"original download");
+        assert_eq!(std::fs::read(&second).unwrap(), b"replacement download");
+    }
+
+    #[cfg(unix)]
+    fn link_directory(target: &Path, link: &Path) {
+        std::os::unix::fs::symlink(target, link).unwrap();
+    }
+
+    #[cfg(windows)]
+    fn link_directory(target: &Path, link: &Path) {
+        use std::os::windows::process::CommandExt;
+
+        // Junctions do not require the symbolic-link privilege on Windows CI.
+        let output = std::process::Command::new("powershell.exe")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "$ErrorActionPreference = 'Stop'; New-Item -ItemType Junction -Path $env:MXU_TEST_LINK -Target $env:MXU_TEST_TARGET | Out-Null",
+            ])
+            .env("MXU_TEST_LINK", link)
+            .env("MXU_TEST_TARGET", target)
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[test]
+    fn cleanup_removes_nested_files_and_empty_directories() {
+        let temp = Fixture::new();
+        let archive = temp.0.join("old");
+        std::fs::create_dir_all(archive.join("nested/empty")).unwrap();
+        std::fs::write(archive.join("nested/old.bin"), b"old").unwrap();
+        std::fs::write(archive.join("old.txt"), b"old").unwrap();
+
+        assert_eq!(cleanup_dir_contents(&archive), (5, 0));
+        assert!(!archive.exists());
+        assert_eq!(cleanup_dir_contents(&archive), (0, 0));
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn cleanup_unlinks_nested_directory_links_and_preserves_their_targets() {
+        let temp = Fixture::new();
+        let archive = temp.0.join("old");
+        let user_data = temp.0.join("user-data");
+        std::fs::create_dir_all(archive.join("resource")).unwrap();
+        std::fs::create_dir(&user_data).unwrap();
+        std::fs::write(user_data.join("profile.txt"), b"user profile").unwrap();
+        std::fs::write(archive.join("resource/old.bin"), b"old").unwrap();
+        link_directory(&user_data, &archive.join("resource/linked"));
+
+        assert_eq!(cleanup_dir_contents(&archive), (4, 0));
+        assert!(!archive.exists());
+        assert_eq!(
+            std::fs::read(user_data.join("profile.txt")).unwrap(),
+            b"user profile"
+        );
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn cleanup_unlinks_the_archive_root_without_entering_its_target() {
+        let temp = Fixture::new();
+        let archive = temp.0.join("old");
+        let user_data = temp.0.join("user-data");
+        std::fs::create_dir(&user_data).unwrap();
+        std::fs::write(user_data.join("profile.txt"), b"user profile").unwrap();
+        link_directory(&user_data, &archive);
+
+        assert_eq!(cleanup_dir_contents(&archive), (1, 0));
+        assert!(archive.symlink_metadata().is_err());
+        assert_eq!(
+            std::fs::read(user_data.join("profile.txt")).unwrap(),
+            b"user profile"
+        );
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn cleanup_removes_dangling_directory_links() {
+        let temp = Fixture::new();
+        let archive = temp.0.join("old");
+        let target = temp.0.join("gone");
+        std::fs::create_dir(&archive).unwrap();
+        std::fs::create_dir(&target).unwrap();
+        link_directory(&target, &archive.join("linked"));
+        std::fs::remove_dir(&target).unwrap();
+
+        assert_eq!(cleanup_dir_contents(&archive), (2, 0));
+        assert!(!archive.exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn cleanup_continues_after_an_exclusively_open_file() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = Fixture::new();
+        let archive = temp.0.join("old");
+        std::fs::create_dir(&archive).unwrap();
+        for name in ["one.bin", "two.bin", "three.bin"] {
+            std::fs::write(archive.join(name), b"old").unwrap();
+        }
+        // Lock the first enumerated entry so an early-aborting cleanup leaves siblings behind.
+        let locked_path = std::fs::read_dir(&archive)
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
+        let locked = std::fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0)
+            .open(&locked_path)
+            .unwrap();
+
+        assert_eq!(cleanup_dir_contents(&archive), (2, 1));
+        let remaining: Vec<_> = std::fs::read_dir(&archive)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect();
+        assert_eq!(remaining, [locked_path]);
+        drop(locked);
+        assert_eq!(cleanup_dir_contents(&archive), (2, 0));
+        assert!(!archive.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn aliases_into_an_app_bundle_are_also_protected() {
+        let temp = Fixture::new();
+        let bundle = temp.0.join("Host.app");
+        std::fs::create_dir_all(bundle.join("Contents/Resources")).unwrap();
+        std::fs::write(bundle.join("Contents/Info.plist"), b"identity").unwrap();
+        let alias = temp.0.join("alias");
+        std::os::unix::fs::symlink(bundle.join("Contents/Resources"), &alias).unwrap();
+        assert!(validate_update_target(alias.join("new").to_string_lossy().into_owned()).is_err());
     }
 }

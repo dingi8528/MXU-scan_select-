@@ -13,6 +13,7 @@ import {
   PackageCheck,
   Bug,
   Network,
+  Clock,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -30,7 +31,7 @@ import { createProxySettings, proxySettingsForUpdateDownload } from '@/services/
 import { resolveI18nText } from '@/services/contentResolver';
 import { getInterfaceLangKey } from '@/i18n';
 import { loggers } from '@/utils/logger';
-import { SwitchButton } from '@/components/FormControls';
+import { SwitchButton, TimeInput } from '@/components/FormControls';
 import { ReleaseNotes, DownloadProgressBar } from '../UpdateInfoCard';
 
 export function UpdateSection() {
@@ -44,6 +45,10 @@ export function UpdateSection() {
     setMirrorChyanCdk,
     setMirrorChyanChannel,
     setAutoUpdateEnabled,
+    scheduledUpdateCheckEnabled,
+    scheduledUpdateCheckTime,
+    setScheduledUpdateCheckEnabled,
+    setScheduledUpdateCheckTime,
     proxySettings,
     setProxySettings,
     updateInfo,
@@ -202,7 +207,7 @@ export function UpdateSection() {
           isPendingGitHubDownload ||
           noUpdateInfoYet);
 
-      if (shouldTryMirrorChyan) {
+      if (shouldTryMirrorChyan && !useAppStore.getState().updateCheckLoading) {
         if (isDownloadingFromGitHub) {
           addDebugLog('检测到填入 CDK，正在停止 GitHub 下载并切换到 Mirror酱...');
           await cancelDownload();
@@ -311,6 +316,7 @@ export function UpdateSection() {
 
   // 检查更新
   const handleCheckUpdate = async () => {
+    if (useAppStore.getState().updateCheckLoading) return;
     if (!projectInterface?.mirrorchyan_rid || !projectInterface?.version) {
       addDebugLog('未配置 mirrorchyan_rid 或 version，无法检查更新');
       return;
@@ -434,6 +440,33 @@ export function UpdateSection() {
                   {t('mirrorChyan.channelBeta')}
                 </button>
               </div>
+            </div>
+
+            {/* 定时检查更新 */}
+            <div className="pt-4 border-t border-border space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-accent" />
+                  <span className="font-medium text-text-primary">
+                    {t('settings.scheduledUpdateCheck')}
+                  </span>
+                </div>
+                <SwitchButton
+                  value={scheduledUpdateCheckEnabled}
+                  onChange={setScheduledUpdateCheckEnabled}
+                />
+              </div>
+              {scheduledUpdateCheckEnabled && (
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-text-secondary">
+                    {t('settings.scheduledUpdateCheckTime')}
+                  </span>
+                  <TimeInput
+                    value={scheduledUpdateCheckTime}
+                    onChange={setScheduledUpdateCheckTime}
+                  />
+                </label>
+              )}
             </div>
 
             {/* CDK 输入 */}

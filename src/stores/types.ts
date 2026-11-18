@@ -25,6 +25,7 @@ import type {
   GamescopeInstance,
 } from '@/types/maa';
 import type { AccentColor, CustomAccent } from '@/themes';
+import type { BuiltinSkinId } from '@/skins/types';
 
 /** 单个任务的运行状态 */
 export type TaskRunStatus = 'idle' | 'pending' | 'running' | 'succeeded' | 'failed';
@@ -108,6 +109,8 @@ export interface AppState {
   // 主题和语言
   theme: Theme;
   accentColor: AccentColor;
+  skinId: BuiltinSkinId;
+  skinReducedMotion: boolean;
   language: Language;
   backgroundImage?: string;
   backgroundOpacity: number;
@@ -121,6 +124,8 @@ export interface AppState {
   customAccents: CustomAccent[];
   setTheme: (theme: Theme) => void;
   setAccentColor: (accent: AccentColor) => void;
+  setSkinId: (skinId: BuiltinSkinId) => void;
+  setSkinReducedMotion: (enabled: boolean) => void;
   setLanguage: (lang: Language) => void;
   setBackgroundImage: (path?: string) => void;
   setBackgroundOpacity: (opacity: number) => void;
@@ -377,6 +382,12 @@ export interface AppState {
   setMirrorChyanChannel: (channel: UpdateChannel) => void;
   setAutoUpdateEnabled: (enabled: boolean) => void;
 
+  // 定时检查更新
+  scheduledUpdateCheckEnabled: boolean;
+  scheduledUpdateCheckTime: string;
+  setScheduledUpdateCheckEnabled: (enabled: boolean) => void;
+  setScheduledUpdateCheckTime: (time: string) => void;
+
   // 代理设置
   proxySettings: ProxySettings | undefined;
   setProxySettings: (settings: ProxySettings | undefined) => void;
@@ -430,9 +441,18 @@ export interface AppState {
   minimizeToTray: boolean;
   setMinimizeToTray: (enabled: boolean) => void;
 
+  // 多开检测（仅 Windows，重启生效）
+  singleInstance: boolean;
+  setSingleInstance: (enabled: boolean) => void;
+
   // 是否为开机自启动模式（无人值守，跳过阻塞式弹窗）
   isAutoStartMode: boolean;
   setIsAutoStartMode: (mode: boolean) => void;
+
+  // 本次进程内自动执行（autostart / autoRunOnLaunch）的任务是否已成功启动过
+  // 用于更新重启后避免重复执行同一批自动任务
+  autoTasksRanInSession: boolean;
+  setAutoTasksRanInSession: (ran: boolean) => void;
 
   // 启动后自动执行的实例 ID
   autoStartInstanceId: string | undefined;

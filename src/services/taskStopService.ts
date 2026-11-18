@@ -1,4 +1,3 @@
-import { normalizeAgentConfigs } from '@/types/interface';
 import { loggers } from '@/utils/logger';
 import { isTauri } from '@/utils/paths';
 import { useAppStore } from '@/stores/appStore';
@@ -9,30 +8,21 @@ import { cancelTaskQueueMonitor } from './taskMonitor';
 const log = loggers.task;
 
 const STOP_TIMEOUT_MS = 8000;
-const STOP_REPOST_INTERVAL_MS = 800;
 const STOP_POLL_INTERVAL_MS = 100;
 
 const stopPromises = new Map<string, Promise<boolean>>();
 
 async function waitForTaskStop(instanceId: string) {
   const start = Date.now();
-  let lastPost = start;
 
   while (Date.now() - start < STOP_TIMEOUT_MS) {
     const running = await maaService.isRunning(instanceId);
-    if (!running) {
+    if (running === false) {
       return true;
     }
 
-    if (Date.now() - lastPost >= STOP_REPOST_INTERVAL_MS) {
-      try {
-        await maaService.stopTask(instanceId);
-        lastPost = Date.now();
-      } catch (error) {
-        log.warn(`[task-stop#${instanceId}] 重发停止请求失败:`, error);
-      }
-    }
-
+    // Stop targets the instance. Reposting after another client restarts
+    // would cancel its new queue if we missed the idle interval.
     await new Promise((resolve) => setTimeout(resolve, STOP_POLL_INTERVAL_MS));
   }
 
@@ -59,8 +49,8 @@ export async function stopInstanceTasks(instanceId: string): Promise<boolean> {
     try {
       await maaService.stopTask(instanceId);
     } catch (error) {
-      const stillRunning = await maaService.isRunning(instanceId).catch(() => false);
-      if (stillRunning) {
+      const stillRunning = await maaService.isRunning(instanceId).catch(() => null);
+      if (stillRunning !== false) {
         throw error;
       }
       log.info(`[task-stop#${instanceId}] Tasker 已停止，跳过首次 stop 错误`);
@@ -74,11 +64,8 @@ export async function stopInstanceTasks(instanceId: string): Promise<boolean> {
 
     cancelTaskQueueMonitor(instanceId);
 
-    const agentConfigs = normalizeAgentConfigs(useAppStore.getState().projectInterface?.agent);
-    if (agentConfigs && agentConfigs.length > 0) {
-      await maaService.stopAgent(instanceId);
-    }
-
+    // Backend idle already includes this run's Agent cleanup. A new stopAgent
+    // RPC here could target the next run started by another client meanwhile.
     cleanupTaskState(instanceId);
     return true;
   })().finally(() => {
@@ -99,6 +86,7 @@ export async function stopInstanceTasksAndExitApp(instanceId: string): Promise<b
     return true;
   }
 
+  log.info(`[task-stop#${instanceId}] 任务已停止，请求退出应用`);
   const { exit } = await import('@tauri-apps/plugin-process');
   await exit(0);
   return true;

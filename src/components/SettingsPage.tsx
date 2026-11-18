@@ -1,3 +1,4 @@
+import { PiDescription } from './PiContent';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -120,7 +121,7 @@ function TaskSettingsSection({
             </div>
             {section.resolvedDescription && (
               <div className="text-xs text-text-secondary line-clamp-2">
-                {section.resolvedDescription}
+                <PiDescription source={section.description} />
               </div>
             )}
           </div>
@@ -259,7 +260,7 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
       ...section,
       resolvedLabel: resolveSettingsText(section.label, section.name, langMap),
       resolvedDescription: resolveSettingsText(section.description, undefined, langMap),
-      resolvedIcon: section.icon,
+      resolvedIcon: resolveSettingsText(section.icon, undefined, langMap),
     }));
   }, [projectInterface?.setting, interfaceTranslations, langKey]);
 
@@ -370,7 +371,7 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
   }, [tocItems]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-bg-primary">
+    <div data-skin-slot="settings" className="flex-1 min-h-0 flex flex-col bg-bg-primary">
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 px-4 py-3 bg-bg-secondary border-b border-border">
         {/* 移动端：汉堡菜单按钮 */}
