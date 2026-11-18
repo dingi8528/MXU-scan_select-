@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { Compass, ListTodo, MoonStar, Route, Sprout, Waves } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
+import { isLunarSkin, lunarSkinNames } from '@/skins/types';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { TabBar } from '@/components/TabBar';
 import { TaskList } from '@/components/TaskList';
@@ -42,7 +43,7 @@ export function BuiltinSkinWorkspace({
     })),
   );
   const ocean = skinId === 'deepseek';
-  const lunar = skinId === 'bb-dubai';
+  const lunar = isLunarSkin(skinId);
   const resizable = lunar && !mobile;
   const sidebarCollapsed = resizable && rightPanelCollapsed;
   const taskState = getSkinTaskState(!!instance?.isRunning, status);
@@ -51,7 +52,7 @@ export function BuiltinSkinWorkspace({
 
   return (
     <div
-      className={`scene-workspace scene-workspace--${skinId}`}
+      className={`scene-workspace scene-workspace--${lunar ? 'bb-dubai' : skinId}`}
       data-skin-slot="workspace"
       data-scene-layout={skinId}
       data-instruments-expanded={mobile || instrumentsExpanded}
@@ -127,7 +128,9 @@ export function BuiltinSkinWorkspace({
           )}
           <span>{instance?.name}</span>
         </div>
-        <h1>{t(lunar ? 'skin.bbDubaiScene' : ocean ? 'skin.deepseekScene' : 'skin.naiwaScene')}</h1>
+        <h1>
+          {t(lunar ? lunarSkinNames[skinId] : ocean ? 'skin.deepseekScene' : 'skin.naiwaScene')}
+        </h1>
         <div className="scene-status" data-task-state={taskState} role="status" aria-live="polite">
           <span aria-hidden="true" />
           {t(`skin.state.${taskState}`)}

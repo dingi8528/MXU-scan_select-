@@ -20,6 +20,7 @@ import {
 import { BackgroundOverlay } from '@/components/BackgroundOverlay';
 import { BuiltinSkinWorkspace } from '@/components/skins/BuiltinSkinWorkspace';
 import { BuiltinSkinShell } from '@/components/skins/BuiltinSkinShell';
+import { isLunarSkin } from '@/skins/types';
 import { isAllowedSettingsHotkey } from '@/components/FormControls';
 import type { BadPathType } from '@/components';
 import {
@@ -445,7 +446,7 @@ function AppContent() {
     e.preventDefault(); // 防止选中文本
     const workspace = e.currentTarget.parentElement;
     sceneResizeBounds.current = null;
-    if (workspace?.dataset.sceneLayout === 'bb-dubai') {
+    if (workspace && isLunarSkin(workspace.dataset.sceneLayout)) {
       const style = getComputedStyle(workspace);
       const area = workspace.getBoundingClientRect();
       const handle = e.currentTarget.getBoundingClientRect();

@@ -130,7 +130,7 @@ test('switching a built-in skin leaves running tasks, runtime state and theme pr
       theme: 'dark',
       accentColor: 'emerald',
     });
-    for (const skinId of ['deepseek', 'naiwa', 'bb-dubai', 'default'] as const) {
+    for (const skinId of ['deepseek', 'naiwa', 'bb-dubai', 'bb-dubai-purple', 'default'] as const) {
       h.store.useAppStore.getState().setSkinId(skinId);
       h.store.useAppStore.getState().setSkinReducedMotion(true);
       const state = h.store.useAppStore.getState();
@@ -180,9 +180,9 @@ test('WebUI skin preferences remain local when saving unrelated backend configur
     assert.equal(h.appearance.loadWebUIAppearance()?.skinId, 'default');
     assert.equal(h.appearance.loadWebUIAppearance()?.skinReducedMotion, true);
 
-    h.appearance.patchWebUIAppearance({ skinId: 'bb-dubai', skinReducedMotion: true });
+    h.appearance.patchWebUIAppearance({ skinId: 'bb-dubai-purple', skinReducedMotion: true });
     h.store.useAppStore.getState().importConfig(config());
-    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai-purple');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
     const legacySaved = h.store.captureConfigForDraft();
     assert.ok(legacySaved);

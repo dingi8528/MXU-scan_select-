@@ -16,11 +16,12 @@ import { useAppStore } from '@/stores/appStore';
 import { getAccentInfoList, type AccentColor, type CustomAccent } from '@/themes';
 import { SortableAccentTile } from './SortableAccentTile';
 import { isTauri } from '@/utils/windowUtils';
-import { builtinSkinIds, type BuiltinSkinId } from '@/skins/types';
+import { builtinSkinIds, lunarSkinNames, type BuiltinSkinId } from '@/skins/types';
 import { BuiltinSkinCompanion } from '@/components/skins/BuiltinSkinCompanion';
 import deepseekThumbnail from '@/assets/skins/deepseek.png';
 import naiwaThumbnail from '@/assets/skins/naiwa-calm.png';
 import bbDubaiThumbnail from '@/assets/skins/bb-dubai-portrait.webp';
+import bbDubaiTrialThumbnail from '@/assets/skins/bb-dubai-trial-portrait.webp';
 import deepseekLicense from '@/assets/skins/LICENSE.deepseek.txt?raw';
 import '@/components/skins/choices.css';
 
@@ -28,7 +29,8 @@ const skinChoices: Record<BuiltinSkinId, { label: string; thumbnail?: string }> 
   default: { label: 'settings.skinDefault' },
   deepseek: { label: 'settings.skinDeepseek', thumbnail: deepseekThumbnail },
   naiwa: { label: 'settings.skinNaiwa', thumbnail: naiwaThumbnail },
-  'bb-dubai': { label: 'settings.skinBbDubai', thumbnail: bbDubaiThumbnail },
+  'bb-dubai': { label: lunarSkinNames['bb-dubai'], thumbnail: bbDubaiThumbnail },
+  'bb-dubai-purple': { label: lunarSkinNames['bb-dubai-purple'], thumbnail: bbDubaiTrialThumbnail },
 };
 
 interface AppearanceSectionProps {
@@ -170,7 +172,7 @@ export function AppearanceSection({
           role="group"
           aria-labelledby="settings-skin-label"
           aria-describedby="settings-skin-hint"
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
         >
           {builtinSkinIds.map((id) => (
             <button

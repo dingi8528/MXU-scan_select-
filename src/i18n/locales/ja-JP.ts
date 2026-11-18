@@ -65,7 +65,7 @@ export default {
     instruments: 'デバイスと画面',
     deepseekScene: '白ごはん潜航艇',
     naiwaScene: '奶蛙の池',
-    bbDubaiScene: '月面司令室',
+    bbDubaiCharacterTitle: '月の管理AI',
     taskCount: '{{count}} 件のタスクが有効',
     regionLabel: 'スキンの仲間',
     state: {
@@ -107,6 +107,7 @@ export default {
     skinDeepseek: '青い太っちょクジラ',
     skinNaiwa: 'ナイワ',
     skinBbDubai: 'BBドバイ',
+    skinChaldeaCommand: 'カルデア司令室',
     skinReducedMotion: 'スキンの動きを減らす',
     skinReducedMotionHint: '連続する動きを減らします。システムの視覚効果を減らす設定にも従います。',
     skinPreview: 'スキンのプレビュー',

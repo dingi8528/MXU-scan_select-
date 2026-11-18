@@ -63,7 +63,7 @@ export default {
     instruments: '裝置與畫面',
     deepseekScene: '白飯潛航艙',
     naiwaScene: '奶蛙的池塘',
-    bbDubaiScene: '月面指揮室',
+    bbDubaiCharacterTitle: '月之管理 AI',
     taskCount: '{{count}} 項任務已啟用',
     regionLabel: '造型夥伴',
     state: {
@@ -103,7 +103,8 @@ export default {
     skinDefault: '預設',
     skinDeepseek: '藍色大肥魚',
     skinNaiwa: '奶蛙',
-    skinBbDubai: 'BB 杜拜',
+    skinChaldeaCommand: '迦勒底指揮室',
+    skinBbDubai: 'BB杜拜',
     skinReducedMotion: '減少造型動態效果',
     skinReducedMotionHint: '減少連續動作，同時遵循系統的減少動態效果設定。',
     skinPreview: '造型預覽',

@@ -45,7 +45,7 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
   --bb-rail-end: #174e75;
 }
 
-.skin-shell[data-mxu-skin='bb-dubai'] > .skin-atmosphere {
+.skin-shell[data-mxu-skin^='bb-dubai'] > .skin-atmosphere {
   background:
     radial-gradient(ellipse at 94% 0%, var(--bb-glow), transparent 52%),
     linear-gradient(135deg, var(--bb-grid) 1px, transparent 1px),
@@ -163,12 +163,12 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
   color: color-mix(in srgb, var(--color-accent) 35%, #e2f2ff);
 }
 
-.skin-shell[data-mxu-skin='bb-dubai'] .scene-status[data-task-state='success'] {
+.skin-shell[data-mxu-skin^='bb-dubai'] .scene-status[data-task-state='success'] {
   color: color-mix(in srgb, var(--color-success) 38%, #e2f2ff);
   border-color: currentColor;
 }
 
-.skin-shell[data-mxu-skin='bb-dubai'] .scene-status[data-task-state='error'] {
+.skin-shell[data-mxu-skin^='bb-dubai'] .scene-status[data-task-state='error'] {
   color: color-mix(in srgb, var(--color-error) 58%, #fff);
   border-color: currentColor;
 }
