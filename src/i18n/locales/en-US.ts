@@ -70,6 +70,7 @@ export default {
     instruments: 'Devices and screen',
     deepseekScene: 'The rice submarine',
     naiwaScene: 'Naiwa’s pond',
+    bbDubaiScene: 'Lunar Command Room',
     taskCount: '{{count}} tasks enabled',
     regionLabel: 'Skin companion',
     state: {
@@ -110,6 +111,7 @@ export default {
     skinDefault: 'Default',
     skinDeepseek: 'Blue Fat Fish',
     skinNaiwa: 'Naiwa',
+    skinBbDubai: 'BB Dubai',
     skinReducedMotion: 'Reduce skin motion',
     skinReducedMotionHint:
       'Reduce continuous animation. Your system’s reduced motion preference also applies.',

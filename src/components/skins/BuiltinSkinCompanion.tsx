@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '@/stores/appStore';
 import type { BuiltinSkinId } from '@/skins/types';
+import bbDubaiPortrait from '@/assets/skins/bb-dubai-portrait.webp';
 import deepseekArt from '@/assets/skins/deepseek.png';
 import deepseekCalm from '@/assets/skins/deepseek-calm.png';
 import deepseekError from '@/assets/skins/deepseek-error.png';
@@ -21,6 +22,7 @@ export function BuiltinSkinCompanion({ preview = false }: { preview?: boolean })
   const skinId = useAppStore((state) => state.skinId);
   const instanceId = useAppStore((state) => state.activeInstanceId);
   if (skinId === 'default') return null;
+  if (skinId === 'bb-dubai') return <BbDubaiPortrait preview={preview} />;
   return (
     <SkinScene
       key={`${skinId}:${preview ? 'preview' : instanceId}`}
@@ -30,11 +32,28 @@ export function BuiltinSkinCompanion({ preview = false }: { preview?: boolean })
   );
 }
 
+function BbDubaiPortrait({ preview }: { preview: boolean }) {
+  const { t } = useTranslation();
+
+  return (
+    <figure
+      className={preview ? 'bb-dubai-portrait bb-dubai-portrait--preview' : 'bb-dubai-portrait'}
+      data-builtin-skin="bb-dubai"
+    >
+      <img src={bbDubaiPortrait} alt="" width={640} height={695} draggable={false} />
+      <figcaption>
+        {t('settings.skinBbDubai')}
+        {preview && <strong>{t('skin.bbDubaiScene')}</strong>}
+      </figcaption>
+    </figure>
+  );
+}
+
 function SkinScene({
   skinId,
   preview,
 }: {
-  skinId: Exclude<BuiltinSkinId, 'default'>;
+  skinId: Extract<BuiltinSkinId, 'deepseek' | 'naiwa'>;
   preview: boolean;
 }) {
   const { t } = useTranslation();

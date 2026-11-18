@@ -4,6 +4,7 @@ import { useAppStore } from '@/stores/appStore';
 import { getSkinTaskState } from './state';
 import { useSkinMotion } from './useSkinMotion';
 import './shell.css';
+import './workspace-bb-dubai.css';
 
 /** Trusted bundled presentation. No scene code can issue business commands. */
 export function BuiltinSkinShell({ children }: { children: ReactNode }) {
@@ -43,7 +44,8 @@ export function BuiltinSkinShell({ children }: { children: ReactNode }) {
       data-skin-motion={motion}
       data-task-state={taskState}
     >
-      {skinId !== 'default' && (
+      {skinId === 'bb-dubai' && <div className="skin-atmosphere" aria-hidden="true" />}
+      {(skinId === 'deepseek' || skinId === 'naiwa') && (
         <div className="skin-atmosphere" data-skin-ambient aria-hidden="true">
           <div className="skin-atmosphere__orb" />
           <div className="skin-atmosphere__orb" />

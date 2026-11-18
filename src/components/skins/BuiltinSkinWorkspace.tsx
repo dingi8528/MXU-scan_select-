@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { Compass, Sprout, Route, Waves } from 'lucide-react';
+import { Compass, ListTodo, MoonStar, Route, Sprout, Waves } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { TabBar } from '@/components/TabBar';
@@ -16,7 +16,7 @@ import './workspace-base.css';
 import './workspace-ocean.css';
 import './workspace-pond.css';
 
-/** Both scenes arrange the same mounted business controls in different physical spaces. */
+/** The scenes arrange the same mounted business controls in different spaces. */
 export function BuiltinSkinWorkspace({
   showAddPanel,
   onToggleAddPanel,
@@ -35,6 +35,7 @@ export function BuiltinSkinWorkspace({
     })),
   );
   const ocean = skinId === 'deepseek';
+  const lunar = skinId === 'bb-dubai';
   const taskState = getSkinTaskState(!!instance?.isRunning, status);
   const enabled =
     instance?.selectedTasks.filter((task) => task.enabled || task.runOnce).length ?? 0;
@@ -46,7 +47,7 @@ export function BuiltinSkinWorkspace({
       data-scene-layout={skinId}
       data-instruments-expanded={mobile || instrumentsExpanded}
     >
-      <div className="scene-decoration" data-scene-decoration aria-hidden="true">
+      <div className="scene-decoration" data-scene-decoration aria-hidden="true" hidden={lunar}>
         <svg
           className="scene-ocean-art"
           viewBox="0 0 1440 960"
@@ -104,25 +105,34 @@ export function BuiltinSkinWorkspace({
       </div>
       <header className="scene-heading">
         <div className="scene-kicker">
-          {ocean ? <Compass aria-hidden="true" /> : <Sprout aria-hidden="true" />}
+          {lunar ? (
+            <MoonStar aria-hidden="true" />
+          ) : ocean ? (
+            <Compass aria-hidden="true" />
+          ) : (
+            <Sprout aria-hidden="true" />
+          )}
           <span>{instance?.name}</span>
         </div>
-        <h1>{t(ocean ? 'skin.deepseekScene' : 'skin.naiwaScene')}</h1>
+        <h1>{t(lunar ? 'skin.bbDubaiScene' : ocean ? 'skin.deepseekScene' : 'skin.naiwaScene')}</h1>
         <div className="scene-status" data-task-state={taskState} role="status" aria-live="polite">
           <span aria-hidden="true" />
           {t(`skin.state.${taskState}`)}
         </div>
+        {lunar && <BuiltinSkinCompanion />}
       </header>
       <nav className="scene-navigation" aria-label={t('skin.instances')}>
-        <div className="scene-navigation__crest" aria-hidden="true">
-          {ocean ? <Waves /> : <Sprout />}
-        </div>
+        {!lunar && (
+          <div className="scene-navigation__crest" aria-hidden="true">
+            {ocean ? <Waves /> : <Sprout />}
+          </div>
+        )}
         <TabBar orientation={ocean && !mobile ? 'vertical' : 'horizontal'} />
       </nav>
       <section className="scene-tasks" data-skin-slot="task-panel">
         <div className="scene-task-heading">
-          <Route aria-hidden="true" />
-          <h2>{t(ocean ? 'skin.route' : 'skin.pondRoute')}</h2>
+          {lunar ? <ListTodo aria-hidden="true" /> : <Route aria-hidden="true" />}
+          <h2>{t(lunar ? 'taskList.title' : ocean ? 'skin.route' : 'skin.pondRoute')}</h2>
           <span>{t('skin.taskCount', { count: enabled })}</span>
         </div>
         <TaskList />
@@ -136,9 +146,11 @@ export function BuiltinSkinWorkspace({
         </div>
         <Toolbar showAddPanel={showAddPanel} onToggleAddPanel={onToggleAddPanel} />
       </section>
-      <div className="scene-companion">
-        <BuiltinSkinCompanion />
-      </div>
+      {!lunar && (
+        <div className="scene-companion">
+          <BuiltinSkinCompanion />
+        </div>
+      )}
       <aside
         className="scene-instruments"
         data-skin-slot="sidebar"

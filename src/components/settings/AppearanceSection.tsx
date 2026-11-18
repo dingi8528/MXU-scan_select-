@@ -16,11 +16,20 @@ import { useAppStore } from '@/stores/appStore';
 import { getAccentInfoList, type AccentColor, type CustomAccent } from '@/themes';
 import { SortableAccentTile } from './SortableAccentTile';
 import { isTauri } from '@/utils/windowUtils';
+import { builtinSkinIds, type BuiltinSkinId } from '@/skins/types';
 import { BuiltinSkinCompanion } from '@/components/skins/BuiltinSkinCompanion';
 import deepseekThumbnail from '@/assets/skins/deepseek.png';
 import naiwaThumbnail from '@/assets/skins/naiwa-calm.png';
+import bbDubaiThumbnail from '@/assets/skins/bb-dubai-portrait.webp';
 import deepseekLicense from '@/assets/skins/LICENSE.deepseek.txt?raw';
 import '@/components/skins/choices.css';
+
+const skinChoices: Record<BuiltinSkinId, { label: string; thumbnail?: string }> = {
+  default: { label: 'settings.skinDefault' },
+  deepseek: { label: 'settings.skinDeepseek', thumbnail: deepseekThumbnail },
+  naiwa: { label: 'settings.skinNaiwa', thumbnail: naiwaThumbnail },
+  'bb-dubai': { label: 'settings.skinBbDubai', thumbnail: bbDubaiThumbnail },
+};
 
 interface AppearanceSectionProps {
   onOpenCreateAccentModal: () => void;
@@ -161,9 +170,9 @@ export function AppearanceSection({
           role="group"
           aria-labelledby="settings-skin-label"
           aria-describedby="settings-skin-hint"
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
         >
-          {(['default', 'deepseek', 'naiwa'] as const).map((id) => (
+          {builtinSkinIds.map((id) => (
             <button
               key={id}
               type="button"
@@ -187,17 +196,13 @@ export function AppearanceSection({
                   <i />
                   <i />
                 </span>
-                {id !== 'default' && (
+                {skinChoices[id].thumbnail && (
                   <span className="skin-choice-preview__hero">
                     <span>
                       <i />
                       <i />
                     </span>
-                    <img
-                      src={id === 'deepseek' ? deepseekThumbnail : naiwaThumbnail}
-                      alt=""
-                      draggable={false}
-                    />
+                    <img src={skinChoices[id].thumbnail} alt="" draggable={false} />
                   </span>
                 )}
                 <span className="skin-choice-preview__workspace">
@@ -216,15 +221,7 @@ export function AppearanceSection({
                   </span>
                 </span>
               </span>
-              <span className="text-center">
-                {t(
-                  id === 'default'
-                    ? 'settings.skinDefault'
-                    : id === 'deepseek'
-                      ? 'settings.skinDeepseek'
-                      : 'settings.skinNaiwa',
-                )}
-              </span>
+              <span className="text-center">{t(skinChoices[id].label)}</span>
             </button>
           ))}
         </div>

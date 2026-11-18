@@ -83,18 +83,18 @@ test('desktop skin preferences survive config round trips and old configurations
     const untouchedBrowserPreferences = h.data.get(appearanceKey);
     h.store.useAppStore
       .getState()
-      .importConfig(config({ skinId: 'naiwa', skinReducedMotion: true }));
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+      .importConfig(config({ skinId: 'bb-dubai', skinReducedMotion: true }));
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
     h.store.useAppStore.getState().setConfigPersistenceReady(true);
     const saved = h.store.flushConfig();
     assert.ok(saved);
-    assert.equal(saved.settings.skinId, 'naiwa');
+    assert.equal(saved.settings.skinId, 'bb-dubai');
     assert.equal(saved.settings.skinReducedMotion, true);
     h.store.useAppStore.getState().setSkinId('default');
     h.store.useAppStore.getState().setSkinReducedMotion(false);
     h.store.useAppStore.getState().importConfig(saved);
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
     assert.equal(h.data.get(appearanceKey), untouchedBrowserPreferences);
 
@@ -130,7 +130,7 @@ test('switching a built-in skin leaves running tasks, runtime state and theme pr
       theme: 'dark',
       accentColor: 'emerald',
     });
-    for (const skinId of ['deepseek', 'naiwa', 'default'] as const) {
+    for (const skinId of ['deepseek', 'naiwa', 'bb-dubai', 'default'] as const) {
       h.store.useAppStore.getState().setSkinId(skinId);
       h.store.useAppStore.getState().setSkinReducedMotion(true);
       const state = h.store.useAppStore.getState();
@@ -180,9 +180,9 @@ test('WebUI skin preferences remain local when saving unrelated backend configur
     assert.equal(h.appearance.loadWebUIAppearance()?.skinId, 'default');
     assert.equal(h.appearance.loadWebUIAppearance()?.skinReducedMotion, true);
 
-    h.appearance.patchWebUIAppearance({ skinId: 'naiwa', skinReducedMotion: true });
+    h.appearance.patchWebUIAppearance({ skinId: 'bb-dubai', skinReducedMotion: true });
     h.store.useAppStore.getState().importConfig(config());
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
     const legacySaved = h.store.captureConfigForDraft();
     assert.ok(legacySaved);

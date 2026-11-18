@@ -10,7 +10,7 @@ import jaJP from '../src/i18n/locales/ja-JP.ts';
 import koKR from '../src/i18n/locales/ko-KR.ts';
 
 test('skin IDs accept only bundled choices and old or unrecognized values use the default interface', () => {
-  for (const id of ['default', 'deepseek', 'naiwa'] as const)
+  for (const id of ['default', 'deepseek', 'naiwa', 'bb-dubai'] as const)
     assert.equal(normalizeBuiltinSkinId(id), id);
   for (const value of [
     undefined,

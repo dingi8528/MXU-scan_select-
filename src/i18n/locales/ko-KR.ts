@@ -64,6 +64,7 @@ export default {
     instruments: '장치와 화면',
     deepseekScene: '흰쌀밥 잠수정',
     naiwaScene: '나이와의 연못',
+    bbDubaiScene: '달 표면 지휘실',
     taskCount: '활성 작업 {{count}}개',
     regionLabel: '스킨 친구',
     state: {
@@ -104,6 +105,7 @@ export default {
     skinDefault: '기본값',
     skinDeepseek: '파란 뚱보 고래',
     skinNaiwa: '나이와',
+    skinBbDubai: 'BB 두바이',
     skinReducedMotion: '스킨 움직임 줄이기',
     skinReducedMotionHint: '반복되는 움직임을 줄입니다. 시스템의 동작 줄이기 설정도 적용됩니다.',
     skinPreview: '스킨 미리보기',

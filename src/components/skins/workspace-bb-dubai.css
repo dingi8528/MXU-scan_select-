@@ -1,0 +1,378 @@
+/* FGO editor surfaces with a blue-and-gold navigation rail and BB's violet moonlight. */
+:is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
+  --color-bg-primary: #e8f1f7;
+  --color-bg-secondary: #fbfdff;
+  --color-bg-tertiary: #edf4f8;
+  --color-bg-hover: #e2edf6;
+  --color-bg-active: #d5e6f3;
+  --color-text-primary: #20384e;
+  --color-text-secondary: #496178;
+  --color-text-tertiary: #516a80;
+  --color-text-muted: #586f84;
+  --color-border: #c5d7e2;
+  --color-border-strong: #9eb9cb;
+  --shadow-sm: 0 2px 7px #15395812;
+  --shadow-md: 0 8px 24px #1539581c;
+  --shadow-lg: 0 18px 48px #1539582f;
+  --bb-gold: #b89b55;
+  --bb-panel: #fbfdffed;
+  --bb-grid: #448db012;
+  --bb-glow: #b7a6e333;
+  --bb-rail-start: #16496f;
+  --bb-rail-end: #176993;
+}
+
+html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
+  --color-bg-primary: #0c1c2c;
+  --color-bg-secondary: #142b3e;
+  --color-bg-tertiary: #193449;
+  --color-bg-hover: #244359;
+  --color-bg-active: #2b4d64;
+  --color-text-primary: #ecf4f9;
+  --color-text-secondary: #b9cedd;
+  --color-text-tertiary: #acc1d1;
+  --color-text-muted: #a2b8ca;
+  --color-border: #315269;
+  --color-border-strong: #50738b;
+  --shadow-sm: 0 2px 7px #0003;
+  --shadow-md: 0 8px 24px #0004;
+  --shadow-lg: 0 18px 48px #0006;
+  --bb-gold: #cfb772;
+  --bb-panel: #142b3ef2;
+  --bb-grid: #8db5ee13;
+  --bb-glow: #5c45964d;
+  --bb-rail-start: #10334d;
+  --bb-rail-end: #174e75;
+}
+
+.skin-shell[data-mxu-skin='bb-dubai'] > .skin-atmosphere {
+  background:
+    radial-gradient(ellipse at 94% 0%, var(--bb-glow), transparent 52%),
+    linear-gradient(135deg, var(--bb-grid) 1px, transparent 1px),
+    linear-gradient(45deg, var(--bb-grid) 1px, transparent 1px);
+  background-size:
+    auto,
+    48px 48px,
+    48px 48px;
+}
+
+.scene-workspace--bb-dubai {
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+  grid-template-rows: clamp(96px, 17vh, 152px) 40px minmax(0, auto) minmax(104px, 1fr);
+  grid-template-areas:
+    'masthead masthead'
+    'navigation navigation'
+    'tasks instruments'
+    'tasks logs';
+  gap: 10px 12px;
+  padding: 12px 16px 14px;
+}
+
+.scene-workspace--bb-dubai .scene-heading,
+.bb-dubai-portrait--preview {
+  color: #f3f6ff;
+  background:
+    url('../../assets/skins/moon-orbit.svg') right 43% / 72% auto no-repeat,
+    radial-gradient(ellipse at 84% 58%, #745bb257, transparent 48%),
+    linear-gradient(105deg, #13354d, #173455 51%, #30244f);
+  border: 1px solid var(--bb-gold);
+  border-radius: 6px 20px 6px 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.scene-workspace--bb-dubai .scene-heading {
+  grid-area: masthead;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  overflow: hidden;
+  padding: 10px 22px;
+}
+
+.scene-workspace--bb-dubai .scene-kicker,
+.scene-workspace--bb-dubai .scene-heading h1,
+.scene-workspace--bb-dubai .scene-status {
+  position: relative;
+  z-index: 1;
+  max-width: 67%;
+}
+
+.scene-workspace--bb-dubai .scene-kicker {
+  color: #d5e7f5;
+  min-width: 0;
+}
+
+.scene-workspace--bb-dubai .scene-kicker svg {
+  flex: none;
+  color: #ecd397;
+}
+
+.scene-workspace--bb-dubai .scene-kicker span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scene-workspace--bb-dubai .scene-heading h1 {
+  font-size: clamp(21px, 3vw, 36px);
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  line-height: 1.16;
+  text-shadow: 0 2px 10px #06152570;
+}
+
+.scene-workspace--bb-dubai .scene-status {
+  padding: 2px 9px;
+  border: 1px solid #b9d4e75c;
+  border-radius: 4px;
+  color: #e2f2ff;
+  background: #10293c80;
+}
+
+.scene-workspace--bb-dubai .scene-status > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  color: #ebcb80;
+  rotate: 45deg;
+}
+
+.scene-workspace--bb-dubai .scene-status[data-task-state='running'] > span {
+  color: color-mix(in srgb, var(--color-accent) 35%, #e2f2ff);
+}
+
+.skin-shell[data-mxu-skin='bb-dubai'] .scene-status[data-task-state='success'] {
+  color: color-mix(in srgb, var(--color-success) 38%, #e2f2ff);
+  border-color: currentColor;
+}
+
+.skin-shell[data-mxu-skin='bb-dubai'] .scene-status[data-task-state='error'] {
+  color: color-mix(in srgb, var(--color-error) 58%, #fff);
+  border-color: currentColor;
+}
+
+.scene-workspace--bb-dubai
+  .scene-status:is([data-task-state='error'], [data-task-state='success'])
+  > span {
+  color: currentColor;
+}
+
+.bb-dubai-portrait {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(42%, 410px);
+  overflow: hidden;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bb-dubai-portrait img {
+  position: absolute;
+  top: 2px;
+  right: clamp(36px, 10vw, 132px);
+  width: clamp(123px, 22vh, 198px);
+  max-width: none;
+  height: auto;
+  filter: drop-shadow(0 0 16px #e1bd6b29);
+}
+
+.bb-dubai-portrait figcaption {
+  position: absolute;
+  right: 14px;
+  bottom: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #172040d6;
+  border: 1px solid #e3c58b70;
+  border-radius: 3px;
+  color: #f7dfad;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+}
+
+.bb-dubai-portrait figcaption::before {
+  content: '';
+  width: 5px;
+  aspect-ratio: 1;
+  background: currentColor;
+  rotate: 45deg;
+}
+
+.bb-dubai-portrait--preview {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 116px;
+}
+
+.bb-dubai-portrait--preview figcaption {
+  inset: 0 auto 0 18px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.bb-dubai-portrait--preview figcaption strong {
+  color: #f3f6ff;
+  font-size: clamp(16px, 2.1vw, 24px);
+}
+
+.bb-dubai-portrait--preview img {
+  width: 150px;
+  right: clamp(10px, 8vw, 86px);
+}
+
+.scene-workspace--bb-dubai .scene-navigation {
+  grid-area: navigation;
+  border-radius: 5px;
+  border: 1px solid var(--bb-gold);
+  background: linear-gradient(100deg, var(--bb-rail-start), var(--bb-rail-end));
+  box-shadow: var(--shadow-sm);
+  --color-bg-hover: #ffffff20;
+  --color-text-primary: #f2f8fd;
+  --color-text-secondary: #e2f0f9;
+  --color-text-muted: #c8dfe9;
+  --color-border: #d2e6ff3d;
+}
+
+.scene-workspace--bb-dubai .scene-navigation [data-skin-slot='tabs'] {
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.scene-workspace--bb-dubai [data-skin-slot='tab'] {
+  color: #dcecf7;
+  background: transparent;
+}
+
+.scene-workspace--bb-dubai [data-skin-slot='tab']:hover,
+.scene-workspace--bb-dubai [data-skin-slot='tab'][data-active='true'] {
+  color: #fff;
+  background: #ffffff1f;
+}
+
+.scene-workspace--bb-dubai [data-skin-slot='tab'][data-active='true'] {
+  border-bottom-color: #f6db9e;
+}
+
+.scene-workspace--bb-dubai .scene-tasks,
+.scene-workspace--bb-dubai .scene-logbook {
+  background: var(--bb-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 5px 11px 5px 5px;
+  box-shadow: var(--shadow-sm);
+}
+
+.scene-workspace--bb-dubai .scene-tasks {
+  grid-area: tasks;
+}
+
+.scene-workspace--bb-dubai .scene-task-heading {
+  background: linear-gradient(90deg, var(--color-bg-tertiary), var(--color-bg-secondary));
+  border-radius: 5px 10px 0 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--bb-gold) 65%, transparent);
+}
+
+.scene-workspace--bb-dubai .scene-task-heading > svg {
+  color: var(--color-text-secondary);
+}
+
+.scene-workspace--bb-dubai [data-skin-slot='task-item'] {
+  border-radius: 5px 9px 5px 5px;
+}
+
+.scene-workspace--bb-dubai [data-skin-slot='toolbar'] {
+  border-radius: 0 0 5px 5px;
+  background: var(--color-bg-tertiary);
+}
+
+.scene-workspace--bb-dubai .scene-instruments {
+  grid-area: instruments;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(40vh, 330px);
+  overflow-y: auto;
+}
+
+.scene-workspace--bb-dubai .scene-devices {
+  order: -1;
+}
+
+.scene-workspace--bb-dubai[data-instruments-expanded='false'] .scene-instruments {
+  display: none;
+}
+
+.scene-workspace--bb-dubai .scene-logbook {
+  grid-area: 4 / 2;
+  overflow: hidden;
+}
+
+.scene-workspace--bb-dubai[data-instruments-expanded='false'] .scene-logbook {
+  grid-row: 3 / 5;
+}
+
+@media (min-width: 980px) {
+  .scene-workspace--bb-dubai [data-skin-slot='toolbar-label'] {
+    display: inline;
+  }
+}
+
+@media (max-width: 767px) {
+  .scene-workspace--bb-dubai {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .scene-workspace--bb-dubai .scene-heading {
+    min-height: 112px;
+    padding: 10px 14px;
+  }
+
+  .scene-workspace--bb-dubai .scene-heading h1 {
+    max-width: 64%;
+  }
+
+  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait {
+    width: min(47%, 230px);
+  }
+
+  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait img {
+    top: 8px;
+    right: 1px;
+    width: 119px;
+  }
+
+  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait figcaption {
+    right: 6px;
+    bottom: 5px;
+  }
+
+  .scene-workspace--bb-dubai [data-skin-slot='tab'] {
+    min-width: 92px;
+  }
+
+  .scene-workspace--bb-dubai .scene-instruments {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (forced-colors: active) {
+  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait img,
+  .bb-dubai-portrait--preview img {
+    display: none;
+  }
+}
