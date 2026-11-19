@@ -149,6 +149,65 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai-purple'] {
   visibility: hidden;
 }
 
+.bb-dubai-portrait:has(> .bb-dubai-dialogue-trigger) {
+  overflow: visible;
+}
+
+.bb-dubai-dialogue-trigger {
+  position: absolute;
+  z-index: 2;
+  inset: var(--bb-portrait-top) var(--bb-portrait-right) 8px auto;
+  width: var(--bb-portrait-width);
+  border-radius: 48% 48% 12px 12px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.bb-dubai-dialogue-trigger:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bb-gold) 65%, transparent);
+}
+
+.bb-dubai-dialogue-trigger:focus-visible {
+  outline: 2px solid var(--bb-hero-ink);
+  outline-offset: -4px;
+}
+
+.bb-dubai-dialogue-trigger > span {
+  display: none;
+}
+
+.bb-dubai-dialogue[data-bb-dialogue] {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: calc(var(--bb-portrait-right) + var(--bb-portrait-width) - 6px);
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: min(236px, 30vw);
+  overflow-wrap: anywhere;
+  padding: 8px 12px;
+  border: 1px solid var(--bb-gold);
+  border-radius: 9px 9px 3px 9px;
+  background: var(--color-bg-secondary);
+  color: var(--bb-hero-ink);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bb-dubai-dialogue[data-bb-dialogue]::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%) rotate(45deg);
+  border-top: 1px solid var(--bb-gold);
+  border-right: 1px solid var(--bb-gold);
+  background: inherit;
+}
+
 [data-mxu-skin='bb-dubai-purple'] .scene-heading .bb-dubai-portrait figcaption {
   border-color: #c6a567;
   border-radius: 999px;
@@ -200,5 +259,42 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai-purple'] {
   [data-mxu-skin='bb-dubai-purple'] .scene-heading .bb-dubai-portrait::before {
     right: 0;
     width: 120px;
+  }
+
+  .bb-dubai-dialogue[data-bb-dialogue] {
+    top: auto;
+    right: calc(var(--bb-portrait-right) + var(--bb-portrait-width) * 0.7);
+    bottom: 8px;
+    max-width: clamp(118px, calc(100vw - 202px), 210px);
+    transform: none;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bb-dubai-dialogue[data-bb-dialogue] {
+    right: calc(var(--bb-portrait-right) + var(--bb-portrait-width) * 0.59);
+  }
+
+  .bb-dubai-portrait:has(> [data-bb-dialogue]) figcaption {
+    visibility: hidden;
+  }
+}
+
+@media (forced-colors: active) {
+  .bb-dubai-dialogue-trigger {
+    inset: 8px 8px auto auto;
+    width: auto;
+    padding: 5px 8px;
+    border: 1px solid ButtonText;
+    border-radius: 4px;
+    background: ButtonFace;
+    color: ButtonText;
+    font-size: 12px;
+  }
+
+  .bb-dubai-dialogue-trigger > span {
+    display: inline;
   }
 }

@@ -13,6 +13,7 @@ import deepseekClip from '@/assets/skins/deepseek-eat.mp4';
 import naiwaCalm from '@/assets/skins/naiwa-calm.png';
 import naiwaStill from '@/assets/skins/naiwa-still.webp';
 import naiwaClip from '@/assets/skins/naiwa-laugh.mp4';
+import { BbDubaiDialogue } from './BbDubaiDialogue';
 import { getSkinTaskState } from './state';
 import { useSkinMotion } from './useSkinMotion';
 import './skins.css';
@@ -43,7 +44,7 @@ function BbDubaiPortrait({ skinId, preview }: { skinId: LunarSkinId; preview: bo
       data-builtin-skin={skinId}
     >
       {skinId === 'bb-dubai-purple' ? (
-        <BbDubaiPurpleArt />
+        <BbDubaiPurpleArt interactive={!preview} />
       ) : (
         <img src={bbDubaiPortrait} alt="" draggable={false} />
       )}
@@ -55,7 +56,7 @@ function BbDubaiPortrait({ skinId, preview }: { skinId: LunarSkinId; preview: bo
   );
 }
 
-function BbDubaiPurpleArt() {
+function BbDubaiPurpleArt({ interactive }: { interactive: boolean }) {
   const idleMotionEnabled = useAppStore(
     (state) =>
       state.skinBbDubaiAnimated &&
@@ -64,8 +65,16 @@ function BbDubaiPurpleArt() {
   );
   const { systemReduced, pageVisible } = useSkinMotion();
 
-  if (idleMotionEnabled && !systemReduced && pageVisible) return <BbDubaiIdleLoop />;
-  return <img src={bbDubaiTrialPortrait} alt="" draggable={false} />;
+  return (
+    <>
+      {idleMotionEnabled && !systemReduced && pageVisible ? (
+        <BbDubaiIdleLoop />
+      ) : (
+        <img src={bbDubaiTrialPortrait} alt="" draggable={false} />
+      )}
+      {interactive && <BbDubaiDialogue pageVisible={pageVisible} />}
+    </>
+  );
 }
 
 function BbDubaiIdleLoop() {

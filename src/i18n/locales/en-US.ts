@@ -71,6 +71,27 @@ export default {
     deepseekScene: 'The rice submarine',
     naiwaScene: 'Naiwa’s pond',
     bbDubaiCharacterTitle: 'Lunar Management AI',
+    bbDubaiDialogue: {
+      trigger: 'Talk to BB',
+      idle: [
+        'The moonlight is ready. Are you, Senpai?',
+        'Take your time. Elegance and stalling are so easily confused.',
+        'A perfect opening calls for a well-timed pause.',
+        'This page is almost grand enough for me.',
+        'Even in standby, one must keep up lunar etiquette.',
+        'Do try to relax with a little grace, Senpai.',
+      ],
+      click: [
+        'Oh? Did someone call for the host?',
+        'A special reception. Full marks, if you please♡',
+        'No appointment needed. Just this once, Senpai.',
+        'A precise click. Do keep it up next time.',
+        'An encore? What impeccable timing, Senpai.',
+        'I’m listening. Impress your host in one sentence.',
+        'Need me to teach you how to say hello, Sen-pai?',
+        'I’ll take the attention. Try a compliment next time.',
+      ],
+    },
     taskCount: '{{count}} tasks enabled',
     regionLabel: 'Skin companion',
     state: {

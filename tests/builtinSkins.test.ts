@@ -61,7 +61,7 @@ function flattenStrings(value: Record<string, unknown>, prefix = ''): Record<str
   );
 }
 
-test('skin controls and factual task labels are translated without invented character dialogue in all five languages', () => {
+test('skin controls, task labels and BB dialogue are translated in all five languages', () => {
   const resources = { enUS, zhCN, zhTW, jaJP, koKR };
   const expected = flattenStrings(enUS.skin);
   const settingKeys = Object.keys(enUS.settings)
