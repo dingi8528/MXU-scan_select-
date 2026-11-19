@@ -49,6 +49,21 @@ export function BuiltinSkinWorkspace({
   const taskState = getSkinTaskState(!!instance?.isRunning, status);
   const enabled =
     instance?.selectedTasks.filter((task) => task.enabled || task.runOnce).length ?? 0;
+  const monitor = (
+    <div className="scene-monitor">
+      <ScreenshotPanel />
+    </div>
+  );
+  const devices = (
+    <div className="scene-devices">
+      <ConnectionPanel />
+    </div>
+  );
+  const logbook = (
+    <section className="scene-logbook">
+      <LogsPanel />
+    </section>
+  );
 
   return (
     <div
@@ -168,25 +183,32 @@ export function BuiltinSkinWorkspace({
         </div>
       )}
       {resizable && sidebarResizeHandle}
-      {!sidebarCollapsed && (
-        <>
+      {!sidebarCollapsed &&
+        (lunar ? (
           <aside
-            className="scene-instruments"
+            className="scene-lunar-sidebar"
             data-skin-slot="sidebar"
             aria-label={t('skin.instruments')}
           >
-            <div className="scene-monitor">
-              <ScreenshotPanel />
+            <div className="scene-instruments">
+              {devices}
+              {monitor}
             </div>
-            <div className="scene-devices">
-              <ConnectionPanel />
-            </div>
+            {logbook}
           </aside>
-          <section className="scene-logbook">
-            <LogsPanel />
-          </section>
-        </>
-      )}
+        ) : (
+          <>
+            <aside
+              className="scene-instruments"
+              data-skin-slot="sidebar"
+              aria-label={t('skin.instruments')}
+            >
+              {monitor}
+              {devices}
+            </aside>
+            {logbook}
+          </>
+        ))}
     </div>
   );
 }
