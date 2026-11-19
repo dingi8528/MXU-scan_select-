@@ -57,18 +57,15 @@ function BbDubaiPortrait({ skinId, preview }: { skinId: LunarSkinId; preview: bo
 }
 
 function BbDubaiPurpleArt({ interactive }: { interactive: boolean }) {
-  const idleMotionEnabled = useAppStore(
-    (state) =>
-      state.skinBbDubaiAnimated &&
-      !state.skinReducedMotion &&
-      !state.instances.find((instance) => instance.id === state.activeInstanceId)?.isRunning,
+  const motionEnabled = useAppStore(
+    (state) => state.skinBbDubaiAnimated && !state.skinReducedMotion,
   );
   const { systemReduced, pageVisible } = useSkinMotion();
 
   return (
     <>
-      {idleMotionEnabled && !systemReduced && pageVisible ? (
-        <BbDubaiIdleLoop />
+      {motionEnabled && !systemReduced && pageVisible ? (
+        <BbDubaiMotionLoop />
       ) : (
         <img src={bbDubaiTrialPortrait} alt="" draggable={false} />
       )}
@@ -77,7 +74,7 @@ function BbDubaiPurpleArt({ interactive }: { interactive: boolean }) {
   );
 }
 
-function BbDubaiIdleLoop() {
+function BbDubaiMotionLoop() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playback, setPlayback] = useState<'loading' | 'playing' | 'failed'>('loading');
 

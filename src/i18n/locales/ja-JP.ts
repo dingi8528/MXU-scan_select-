@@ -147,9 +147,9 @@ export default {
     skinDeepseek: '青い太っちょクジラ',
     skinNaiwa: 'ナイワ',
     skinBbDubai: 'BBドバイ',
-    skinBbDubaiAnimated: 'BBの待機アニメーションを再生',
+    skinBbDubaiAnimated: 'BBのアニメーションを再生',
     skinBbDubaiAnimatedHint:
-      '待機中に無音でループ再生します。この設定をオフにするか、動きを減らす設定を有効にすると静止画を表示します。',
+      'タスクの実行中も無音でループ再生します。この設定をオフにするか、動きを減らす設定を有効にすると静止画を表示します。',
     skinChaldeaCommand: 'カルデア司令室',
     skinReducedMotion: 'スキンの動きを減らす',
     skinReducedMotionHint: '連続する動きを減らします。システムの視覚効果を減らす設定にも従います。',
