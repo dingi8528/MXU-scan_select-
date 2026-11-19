@@ -163,10 +163,6 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai-purple'] {
   pointer-events: auto;
 }
 
-.bb-dubai-dialogue-trigger:hover {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bb-gold) 65%, transparent);
-}
-
 .bb-dubai-dialogue-trigger:focus-visible {
   outline: 2px solid var(--bb-hero-ink);
   outline-offset: -4px;
