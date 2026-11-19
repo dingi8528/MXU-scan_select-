@@ -2,7 +2,7 @@
 //!
 //! 提供路径处理和其他通用工具函数
 
-use super::types::{MaaCallbackEvent, MaaState, StateChangedEvent, TaskRunEvent};
+use super::types::{MaaCallbackEvent, MaaState, StateChangedEvent, TaskFailureReason, TaskRunEvent};
 use crate::ws_broadcast::{WsBroadcast, WsEvent};
 use std::cell::Cell;
 use std::path::PathBuf;
@@ -43,19 +43,21 @@ pub fn emit_callback_event<S: Into<String>>(
 ///
 /// Tauri 端和 WebUI 端都会收到此事件，用于刷新 `isRunning`、连接状态等运行时信息。
 pub fn emit_state_changed(app: &AppHandle, instance_id: &str, kind: &str) {
-    emit_state_changed_with_task_event(app, instance_id, kind, None);
+    emit_state_changed_with_task_event(app, instance_id, kind, None, None);
 }
 
-fn emit_state_changed_with_task_event(
+pub(super) fn emit_state_changed_with_task_event(
     app: &AppHandle,
     instance_id: &str,
     kind: &str,
     task_run_event: Option<TaskRunEvent>,
+    task_failure_reason: Option<TaskFailureReason>,
 ) {
     let event = StateChangedEvent {
         instance_id: instance_id.to_string(),
         kind: kind.to_string(),
         task_run_event,
+        task_failure_reason,
     };
     // 广播到所有 WebSocket 客户端
     if let Some(ws) = app.try_state::<Arc<WsBroadcast>>() {
@@ -181,6 +183,7 @@ pub fn handle_task_callback(
         instance_id,
         "task-progress",
         first_task_started.then_some(TaskRunEvent::Started),
+        None,
     );
     if let Some((tasker, completion)) = completion {
         schedule_run_completion(maa_state, app, instance_id, tasker, completion);
@@ -288,7 +291,7 @@ pub(super) fn schedule_run_completion(
     // The framework can become idle only after its callback returns. Never
     // disconnect synchronously on the callback dispatch thread.
     std::thread::spawn(move || {
-        let task_run_event = Cell::new(None);
+        let task_run_result = Cell::new((None, None));
         completion.finish_when_idle(
             || {
                 tasker.as_ref().is_some_and(|tasker| tasker.running())
@@ -314,7 +317,11 @@ pub(super) fn schedule_run_completion(
                             if instance.has_unfinished_queue() {
                                 instance.begin_stop();
                             }
-                            task_run_event.set(instance.task_run_completion_event());
+                            let event = instance.task_run_completion_event();
+                            let reason = (event == Some(TaskRunEvent::Failed)
+                                && instance.submission_failed)
+                                .then_some(TaskFailureReason::Submission);
+                            task_run_result.set((event, reason));
                             (
                                 std::mem::take(&mut instance.agent_clients),
                                 std::mem::take(&mut instance.agent_children),
@@ -337,11 +344,13 @@ pub(super) fn schedule_run_completion(
                 }
             },
             || {
+                let (event, reason) = task_run_result.get();
                 emit_state_changed_with_task_event(
                     &app,
                     &instance_id,
                     "tasks-completed",
-                    task_run_event.get(),
+                    event,
+                    reason,
                 )
             },
         );

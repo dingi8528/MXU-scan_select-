@@ -11,6 +11,7 @@ import type {
   ConnectionStatus,
   TaskStatus,
   StateChangedEvent,
+  TaskFailureReason,
   TaskRunEvent,
   AgentConfig,
   TaskConfig,
@@ -29,6 +30,13 @@ import { ControllerConnectionSupersededError } from '@/utils/controllerErrors';
 import { getLogSecrets } from '@/utils/logSecrets';
 
 const log = loggers.maa;
+
+type TaskRunHandler = (
+  instanceId: string,
+  taskRunEvent: TaskRunEvent,
+  failureReason?: TaskFailureReason,
+) => void;
+const taskRunHandlers = new Set<TaskRunHandler>();
 
 async function taskOperation<T>(call: () => Promise<T>): Promise<T> {
   try {
@@ -160,17 +168,34 @@ export const maaService = {
         )
       : wsService.onStateChanged(handle);
   },
-  async onTaskRunEvent(
-    callback: (instanceId: string, taskRunEvent: TaskRunEvent) => void,
-  ): Promise<UnlistenFn> {
-    const handle = (instanceId: string, _kind: string, taskRunEvent?: TaskRunEvent) => {
-      if (taskRunEvent) callback(instanceId, taskRunEvent);
+  async onTaskRunEvent(callback: TaskRunHandler): Promise<UnlistenFn> {
+    const handle = (
+      instanceId: string,
+      _kind: string,
+      taskRunEvent?: TaskRunEvent,
+      failureReason?: TaskFailureReason,
+    ) => {
+      if (taskRunEvent) callback(instanceId, taskRunEvent, failureReason);
     };
-    return isTauri()
-      ? listen<StateChangedEvent>('state-changed', ({ payload }) =>
-          handle(payload.instance_id, payload.kind, payload.task_run_event),
+    const unsubscribe = isTauri()
+      ? await listen<StateChangedEvent>('state-changed', ({ payload }) =>
+          handle(
+            payload.instance_id,
+            payload.kind,
+            payload.task_run_event,
+            payload.task_failure_reason,
+          ),
         )
       : wsService.onStateChanged(handle);
+    taskRunHandlers.add(callback);
+    return () => {
+      taskRunHandlers.delete(callback);
+      unsubscribe();
+    };
+  },
+  // Automatic device and resource preparation happens in the initiating UI.
+  reportTaskStartFailure(instanceId: string, reason: 'controller' | 'resource') {
+    taskRunHandlers.forEach((callback) => callback(instanceId, 'failed', reason));
   },
   async registerLogSecrets(extra: string[] = []): Promise<void> {
     const secrets = getLogSecrets(extra);

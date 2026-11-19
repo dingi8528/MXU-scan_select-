@@ -68,6 +68,13 @@ test('skin controls, task labels and BB dialogue are translated in all five lang
     .filter((key) => key.startsWith('skin'))
     .sort();
   for (const [language, translation] of Object.entries(resources)) {
+    const { idle, click, start, success } = translation.skin.bbDubaiDialogue;
+    assert.equal(idle.length, 12, language);
+    assert.equal(new Set(idle).size, idle.length, language);
+    assert.equal(click.length, 12, language);
+    assert.equal(new Set(click).size, click.length, language);
+    assert.equal(typeof start, 'string', language);
+    assert.equal(typeof success, 'string', language);
     const messages = flattenStrings(translation.skin);
     assert.deepEqual(Object.keys(messages).sort(), Object.keys(expected).sort(), language);
     assert.equal(Object.hasOwn(translation.skin, 'deepseek'), false, language);

@@ -2,16 +2,23 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { maaService } from '@/services/maaService';
 import { useAppStore } from '@/stores/appStore';
+import type { TaskFailureReason } from '@/types/maa';
 import { loggers } from '@/utils/logger';
 
 const IDLE_INTERVAL_MS = 20_000;
 const LINE_DURATION_MS = 5_000;
 const CLICK_COOLDOWN_MS = 1_000;
-const LINE_COUNTS = { idle: 6, click: 8, start: 3, success: 3, failure: 3 } as const;
-const TASK_RUN_LINES = { started: 'start', succeeded: 'success', failed: 'failure' } as const;
+const LINE_COUNTS = { idle: 12, click: 12 } as const;
+const FAILURE_KEYS: Record<TaskFailureReason, string> = {
+  agent: 'failure.agent',
+  controller: 'failure.controller',
+  resource: 'failure.resource',
+  submission: 'failure.submission',
+};
 
-type LineKind = keyof typeof LINE_COUNTS;
-type Line = { kind: LineKind; index: number; instanceId: string | null };
+type RandomLineKind = keyof typeof LINE_COUNTS;
+type LineKind = RandomLineKind | 'start' | 'success' | 'failure';
+type Line = { kind: LineKind; key: string; instanceId: string | null };
 
 export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
   const { t } = useTranslation();
@@ -22,7 +29,7 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
   const [focused, setFocused] = useState(() => document.hasFocus());
   const [line, setLine] = useState<Line | null>(null);
   const [idleRevision, setIdleRevision] = useState(0);
-  const lastLines = useRef<Partial<Record<LineKind, number>>>({});
+  const lastLines = useRef<Partial<Record<RandomLineKind, number>>>({});
   const nextClickAt = useRef(0);
   const inForeground = pageVisible && focused;
 
@@ -37,14 +44,21 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
     };
   }, []);
 
-  const showLine = useCallback((kind: LineKind) => {
-    const previous = lastLines.current[kind];
-    const choices = LINE_COUNTS[kind] - (previous === undefined ? 0 : 1);
-    const choice = Math.floor(Math.random() * choices);
-    const index = previous !== undefined && choice >= previous ? choice + 1 : choice;
-    lastLines.current[kind] = index;
-    setLine({ kind, index, instanceId: useAppStore.getState().activeInstanceId });
+  const showLine = useCallback((kind: LineKind, key: string) => {
+    setLine({ kind, key, instanceId: useAppStore.getState().activeInstanceId });
   }, []);
+
+  const showRandomLine = useCallback(
+    (kind: RandomLineKind) => {
+      const previous = lastLines.current[kind];
+      const choices = LINE_COUNTS[kind] - (previous === undefined ? 0 : 1);
+      const choice = Math.floor(Math.random() * choices);
+      const index = previous !== undefined && choice >= previous ? choice + 1 : choice;
+      lastLines.current[kind] = index;
+      showLine(kind, `${kind}.${index}`);
+    },
+    [showLine],
+  );
 
   useEffect(() => {
     if (!inForeground) setLine(null);
@@ -59,7 +73,7 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
     let disposed = false;
     let unsubscribe: (() => void) | undefined;
     void maaService
-      .onTaskRunEvent((instanceId, event) => {
+      .onTaskRunEvent((instanceId, event, failureReason) => {
         if (
           disposed ||
           useAppStore.getState().activeInstanceId !== instanceId ||
@@ -69,10 +83,24 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
           return;
         }
         setIdleRevision((revision) => revision + 1);
-        if (event === 'stopped') {
-          setLine((current) => (current?.kind === 'start' ? null : current));
-        } else {
-          showLine(TASK_RUN_LINES[event]);
+        switch (event) {
+          case 'stopped':
+            setLine((current) => (current?.kind === 'start' ? null : current));
+            break;
+          case 'started':
+            showLine('start', 'start');
+            break;
+          case 'succeeded':
+            showLine('success', 'success');
+            break;
+          case 'failed':
+            showLine(
+              'failure',
+              failureReason && Object.prototype.hasOwnProperty.call(FAILURE_KEYS, failureReason)
+                ? FAILURE_KEYS[failureReason]
+                : 'failure.unknown',
+            );
+            break;
         }
       })
       .then(
@@ -90,9 +118,9 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
 
   useEffect(() => {
     if (!inForeground || taskRunning) return;
-    const timer = window.setInterval(() => showLine('idle'), IDLE_INTERVAL_MS);
+    const timer = window.setInterval(() => showRandomLine('idle'), IDLE_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [activeInstanceId, idleRevision, inForeground, taskRunning, showLine]);
+  }, [activeInstanceId, idleRevision, inForeground, taskRunning, showRandomLine]);
 
   useEffect(() => {
     if (!line) return;
@@ -105,7 +133,7 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
     if (now < nextClickAt.current) return;
     nextClickAt.current = now + CLICK_COOLDOWN_MS;
     setIdleRevision((revision) => revision + 1);
-    showLine('click');
+    showRandomLine('click');
   }
 
   const visibleLine =
@@ -125,7 +153,7 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
         <span>{t('skin.bbDubaiDialogue.trigger')}</span>
       </button>
       <div className="bb-dubai-dialogue" role="status" data-bb-dialogue={visibleLine?.kind}>
-        {visibleLine && t(`skin.bbDubaiDialogue.${visibleLine.kind}.${visibleLine.index}`)}
+        {visibleLine && t(`skin.bbDubaiDialogue.${visibleLine.key}`)}
       </div>
     </>
   );

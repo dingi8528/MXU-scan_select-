@@ -9,7 +9,7 @@
 import { createLogger } from '@/utils/logger';
 import { suspendConfigSync } from '@/services/configService';
 import type { ConfigChangedEvent } from '@/utils/configSync';
-import type { StateChangedEvent, TaskRunEvent } from '@/types/maa';
+import type { StateChangedEvent, TaskFailureReason, TaskRunEvent } from '@/types/maa';
 import { getWebSocketUrl } from '@/utils/backendApi';
 
 const log = createLogger('wsService');
@@ -43,7 +43,12 @@ export type WsMessage =
 type MaaCallbackHandler = (message: string, details: string, instanceId?: string | null) => void;
 type AgentOutputHandler = (instanceId: string, stream: string, line: string) => void;
 type ConfigChangedHandler = (event: ConfigChangedEvent | undefined) => void;
-type StateChangedHandler = (instanceId: string, kind: string, taskRunEvent?: TaskRunEvent) => void;
+type StateChangedHandler = (
+  instanceId: string,
+  kind: string,
+  taskRunEvent?: TaskRunEvent,
+  failureReason?: TaskFailureReason,
+) => void;
 type ConnectionStatusHandler = (connected: boolean) => void;
 
 // ============================================================================
@@ -156,7 +161,12 @@ function onMessage(event: MessageEvent) {
       break;
     case 'state-changed':
       stateChangedHandlers.forEach((h) =>
-        h(msg.payload.instance_id, msg.payload.kind, msg.payload.task_run_event),
+        h(
+          msg.payload.instance_id,
+          msg.payload.kind,
+          msg.payload.task_run_event,
+          msg.payload.task_failure_reason,
+        ),
       );
       break;
     default:

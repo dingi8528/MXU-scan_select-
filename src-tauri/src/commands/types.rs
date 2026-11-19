@@ -945,6 +945,13 @@ pub enum TaskRunEvent {
     Stopped,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskFailureReason {
+    Submission,
+    Agent,
+}
+
 /// 同时用于 Tauri WebView 和 WebSocket。任务事件仅随实时通知发送。
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateChangedEvent {
@@ -952,6 +959,8 @@ pub struct StateChangedEvent {
     pub kind: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_run_event: Option<TaskRunEvent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_failure_reason: Option<TaskFailureReason>,
 }
 
 /// Agent 配置
