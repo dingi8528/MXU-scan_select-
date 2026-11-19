@@ -199,76 +199,6 @@ jobs:
           name: MXU-linux-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}
           path: "MXU-linux-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}.tar.gz"
 
-  macos:
-    needs: meta
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        arch: [x86_64, aarch64]
-      fail-fast: false
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: "pnpm"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.arch == 'x86_64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: "src-tauri -> target"
-          shared-key: "macos-${{ matrix.arch }}"
-          cache-on-failure: true
-
-      - name: Install frontend dependencies
-        run: pnpm install
-
-      - name: Update version
-        run: |
-          VERSION="${{ needs.meta.outputs.version }}"
-          # Update package.json
-          sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-          # Update tauri.conf.json
-          sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
-          # Update Cargo.toml (only the package version at line start, not dependency versions)
-          sed -i '' "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
-          echo "Updated version to $VERSION"
-
-      - name: Build Tauri app
-        run: pnpm tauri build --bundles app --target ${{ matrix.arch == 'x86_64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}
-
-      - name: Prepare artifacts
-        run: |
-          TARGET_DIR="src-tauri/target/${{ matrix.arch == 'x86_64' && 'x86_64-apple-darwin' || 'aarch64-apple-darwin' }}/release"
-          APP_PATH="$TARGET_DIR/bundle/macos/mxu.app"
-          test -x "$APP_PATH/Contents/MacOS/mxu"
-          BUNDLE_ID=$(plutil -extract CFBundleIdentifier raw "$APP_PATH/Contents/Info.plist")
-          test "$BUNDLE_ID" = "com.misteo.mxu"
-          mkdir -p install
-          cp -R "$APP_PATH" install/
-          cp LICENSE README.md install/ || true
-          ls -la install/
-          tar -czvf MXU-macos-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}.tar.gz -C install .
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v6
-        if: always()
-        with:
-          name: MXU-macos-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}
-          path: "MXU-macos-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}.tar.gz"
-
   changelog:
     name: Generate changelog
     needs: meta
@@ -293,7 +223,7 @@ jobs:
 
   release:
     if: ${{ needs.meta.outputs.is-release == 'true' }}
-    needs: [meta, windows, linux, macos, changelog]
+    needs: [meta, windows, linux, changelog]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -310,7 +240,7 @@ jobs:
           for dir in */; do
             name="${dir%/}"
             cd "$name"
-            # Linux and macOS artifacts are already tgz files, just move them
+            # Linux artifacts are already tgz files, just move them
             if ls *.tar.gz 1> /dev/null 2>&1; then
               mv *.tar.gz ../
             else
