@@ -240,6 +240,7 @@ export const useAppStore = create<AppState>()(
     accentColor: 'emerald',
     skinId: 'default',
     skinReducedMotion: false,
+    skinBbDubaiAnimated: true,
     language: 'system',
     backgroundImage: undefined,
     backgroundOpacity: 50,
@@ -270,6 +271,10 @@ export const useAppStore = create<AppState>()(
       const normalized = enabled === true;
       set({ skinReducedMotion: normalized });
       if (!isTauri()) patchWebUIAppearance({ skinReducedMotion: normalized });
+    },
+    setSkinBbDubaiAnimated: (animated) => {
+      set({ skinBbDubaiAnimated: animated });
+      if (!isTauri()) patchWebUIAppearance({ skinBbDubaiAnimated: animated });
     },
     setLanguage: (lang) => {
       set({ language: lang });
@@ -962,7 +967,10 @@ export const useAppStore = create<AppState>()(
                 const optDef = pi.option[optionKey];
                 if (
                   optDef &&
-                  (optDef.type === 'switch' || optDef.type === 'select' || optDef.type === 'scan_select' || !optDef.type) &&
+                  (optDef.type === 'switch' ||
+                    optDef.type === 'select' ||
+                    optDef.type === 'scan_select' ||
+                    !optDef.type) &&
                   'cases' in optDef
                 ) {
                   let selectedCase;
@@ -1558,6 +1566,10 @@ export const useAppStore = create<AppState>()(
         accentColor: effectiveAccentColor,
         skinId: effectiveSkinId,
         skinReducedMotion: effectiveSkinReducedMotion,
+        skinBbDubaiAnimated:
+          (localAppearance
+            ? localAppearance.skinBbDubaiAnimated
+            : config.settings.skinBbDubaiAnimated) !== false,
         language: effectiveLanguage,
         backgroundImage: effectiveBgImage,
         backgroundOpacity: effectiveBgOpacity,
@@ -2593,6 +2605,8 @@ function generateConfig(): MxuConfig {
           accentColor: ba?.accentColor ?? state.accentColor,
           skinId: normalizeBuiltinSkinId(_isWebUI ? ba?.skinId : state.skinId),
           skinReducedMotion: (_isWebUI ? ba?.skinReducedMotion : state.skinReducedMotion) === true,
+          skinBbDubaiAnimated:
+            (_isWebUI ? ba?.skinBbDubaiAnimated : state.skinBbDubaiAnimated) !== false,
           language: ba?.language ?? state.language,
           backgroundImage: ba?.backgroundImage ?? state.backgroundImage,
           backgroundOpacity: ba?.backgroundOpacity ?? state.backgroundOpacity,
@@ -2681,6 +2695,7 @@ useAppStore.subscribe(
       accentColor: state.accentColor,
       skinId: state.skinId,
       skinReducedMotion: state.skinReducedMotion,
+      skinBbDubaiAnimated: state.skinBbDubaiAnimated,
       language: state.language,
       customAccents: state.customAccents,
       windowSize: state.windowSize,

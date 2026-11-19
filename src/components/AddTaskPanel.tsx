@@ -175,7 +175,7 @@ function createDefaultAction(defaultProgram?: string): ActionConfig {
   };
 }
 
-export function AddTaskPanel() {
+export function AddTaskPanel({ fitAvailableHeight = false }: { fitAvailableHeight?: boolean }) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const {
@@ -634,6 +634,15 @@ export function AddTaskPanel() {
     );
   };
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const getResizeHeight = useCallback(() => {
+    const scroll = scrollRef.current;
+    if (fitAvailableHeight && scroll && scroll.scrollHeight > scroll.clientHeight) {
+      return Math.min(addTaskPanelHeight, scroll.clientHeight);
+    }
+    return addTaskPanelHeight;
+  }, [addTaskPanelHeight, fitAvailableHeight]);
+
   const isDraggingRef = useRef(false);
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
@@ -666,7 +675,7 @@ export function AddTaskPanel() {
       cleanupResizeListeners();
       isDraggingRef.current = true;
       startYRef.current = e.clientY;
-      startHeightRef.current = addTaskPanelHeight;
+      startHeightRef.current = getResizeHeight();
 
       const handleMouseMove = (e: MouseEvent) => {
         if (!isDraggingRef.current) return;
@@ -686,7 +695,7 @@ export function AddTaskPanel() {
       document.body.style.cursor = 'ns-resize';
       document.body.style.userSelect = 'none';
     },
-    [addTaskPanelHeight, cleanupResizeListeners, setAddTaskPanelHeight],
+    [getResizeHeight, cleanupResizeListeners, setAddTaskPanelHeight],
   );
 
   const handleResizeKeyDown = useCallback(
@@ -694,16 +703,16 @@ export function AddTaskPanel() {
       let nextHeight: number | null = null;
       switch (e.key) {
         case 'ArrowUp':
-          nextHeight = addTaskPanelHeight + addTaskPanelResizeStep;
+          nextHeight = getResizeHeight() + addTaskPanelResizeStep;
           break;
         case 'ArrowDown':
-          nextHeight = addTaskPanelHeight - addTaskPanelResizeStep;
+          nextHeight = getResizeHeight() - addTaskPanelResizeStep;
           break;
         case 'PageUp':
-          nextHeight = addTaskPanelHeight + addTaskPanelResizeStep * 2;
+          nextHeight = getResizeHeight() + addTaskPanelResizeStep * 2;
           break;
         case 'PageDown':
-          nextHeight = addTaskPanelHeight - addTaskPanelResizeStep * 2;
+          nextHeight = getResizeHeight() - addTaskPanelResizeStep * 2;
           break;
         case 'Home':
           nextHeight = addTaskPanelHeightMin;
@@ -718,7 +727,7 @@ export function AddTaskPanel() {
       e.preventDefault();
       setAddTaskPanelHeight(nextHeight);
     },
-    [addTaskPanelHeight, setAddTaskPanelHeight],
+    [getResizeHeight, setAddTaskPanelHeight],
   );
 
   const ungroupedContentId = 'add-task-panel-section-ungrouped';
@@ -780,6 +789,7 @@ export function AddTaskPanel() {
 
       {/* 任务列表（包含特殊任务） */}
       <div
+        ref={scrollRef}
         data-skin-slot="add-tasks-scroll"
         className="overflow-y-auto"
         style={{

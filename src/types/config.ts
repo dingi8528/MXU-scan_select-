@@ -144,6 +144,7 @@ export interface AppSettings {
   skinId?: BuiltinSkinId;
   /** 手动减少皮肤动效；系统的减少动效设置始终优先。 */
   skinReducedMotion?: boolean;
+  skinBbDubaiAnimated?: boolean;
   language: 'system' | 'zh-CN' | 'zh-TW' | 'en-US' | 'ja-JP' | 'ko-KR';
   backgroundImage?: string; // 背景图片路径
   backgroundOpacity?: number; // 背景图片不透明度 (0-100)
@@ -262,6 +263,7 @@ export const defaultConfig: MxuConfig = {
     accentColor: defaultAccentColor,
     skinId: 'default',
     skinReducedMotion: false,
+    skinBbDubaiAnimated: true,
     language: 'system',
     confirmBeforeDelete: false,
     maxLogsPerInstance: DEFAULT_MAX_LOGS_PER_INSTANCE,

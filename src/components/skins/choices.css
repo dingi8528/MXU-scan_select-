@@ -393,3 +393,96 @@
   background: var(--choice-panel);
   border-block: 1px dashed var(--choice-mark);
 }
+
+[data-skin-choice='bb-dubai'] .skin-choice-preview {
+  --choice-bg: #e8f1f7;
+  --choice-panel: #fbfdff;
+  --choice-line: #b89b55;
+  --choice-mark: #175d88;
+  --choice-hero: #28234c;
+}
+
+.dark [data-skin-choice='bb-dubai'] .skin-choice-preview {
+  --choice-bg: #0c1c2c;
+  --choice-panel: #142b3e;
+  --choice-line: #aa935c;
+  --choice-mark: #86b5d6;
+}
+
+[data-skin-choice='bb-dubai-purple'] .skin-choice-preview {
+  --choice-nav: #654682;
+  --choice-bg: #f3eef8;
+  --choice-panel: #fffdfd;
+  --choice-line: #b5946a;
+  --choice-mark: #654682;
+  --choice-hero: #dec9eb;
+  --choice-hero-start: #f9f3fc;
+  --choice-hero-ink: #654682;
+}
+
+.dark [data-skin-choice='bb-dubai-purple'] .skin-choice-preview {
+  --choice-bg: #181022;
+  --choice-panel: #241832;
+  --choice-line: #bfa16a;
+  --choice-mark: #caa9e7;
+  --choice-hero: #694681;
+  --choice-hero-start: #302043;
+  --choice-hero-ink: #f7dda0;
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview {
+  display: grid;
+  grid-template-columns: 22% minmax(0, 1fr);
+  grid-template-rows: 10px auto minmax(0, 1fr);
+  grid-template-areas:
+    'title title'
+    'tabs hero'
+    'tabs workspace';
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__hero {
+  grid-area: hero;
+  height: 31px;
+  margin: 3px 4px 2px;
+  border: 1px solid var(--choice-line);
+  background: linear-gradient(105deg, var(--choice-hero-start, #16496f), var(--choice-hero));
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__hero i {
+  background: var(--choice-hero-ink, #edf4f8);
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__hero img {
+  width: 34px;
+  height: 35px;
+  align-self: flex-start;
+  object-position: top;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__title {
+  grid-area: title;
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__tabs {
+  grid-area: tabs;
+  height: auto;
+  margin: 3px 0 4px 4px;
+  padding: 6px 3px;
+  flex-direction: column;
+  border: 1px solid var(--choice-line);
+  border-radius: 3px;
+  background: var(--choice-nav, #16496f);
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__tabs i {
+  width: 100%;
+  height: 6px;
+  border-radius: 1px;
+}
+
+[data-skin-choice^='bb-dubai'] .skin-choice-preview__workspace {
+  grid-area: workspace;
+}

@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '@/stores/appStore';
-import type { BuiltinSkinId } from '@/skins/types';
+import { isLunarSkin, lunarSkinNames, type BuiltinSkinId, type LunarSkinId } from '@/skins/types';
+import bbDubaiPortrait from '@/assets/skins/bb-dubai-portrait.webp';
+import bbDubaiTrialPortrait from '@/assets/skins/bb-dubai-trial-portrait.webp';
+import bbDubaiIdleClip from '@/assets/skins/bb-dubai-idle.webm';
 import deepseekArt from '@/assets/skins/deepseek.png';
 import deepseekCalm from '@/assets/skins/deepseek-calm.png';
 import deepseekError from '@/assets/skins/deepseek-error.png';
@@ -10,6 +13,7 @@ import deepseekClip from '@/assets/skins/deepseek-eat.mp4';
 import naiwaCalm from '@/assets/skins/naiwa-calm.png';
 import naiwaStill from '@/assets/skins/naiwa-still.webp';
 import naiwaClip from '@/assets/skins/naiwa-laugh.mp4';
+import { BbDubaiDialogue } from './BbDubaiDialogue';
 import { getSkinTaskState } from './state';
 import { useSkinMotion } from './useSkinMotion';
 import './skins.css';
@@ -21,6 +25,7 @@ export function BuiltinSkinCompanion({ preview = false }: { preview?: boolean })
   const skinId = useAppStore((state) => state.skinId);
   const instanceId = useAppStore((state) => state.activeInstanceId);
   if (skinId === 'default') return null;
+  if (isLunarSkin(skinId)) return <BbDubaiPortrait skinId={skinId} preview={preview} />;
   return (
     <SkinScene
       key={`${skinId}:${preview ? 'preview' : instanceId}`}
@@ -30,11 +35,90 @@ export function BuiltinSkinCompanion({ preview = false }: { preview?: boolean })
   );
 }
 
+function BbDubaiPortrait({ skinId, preview }: { skinId: LunarSkinId; preview: boolean }) {
+  const { t } = useTranslation();
+
+  return (
+    <figure
+      className={preview ? 'bb-dubai-portrait bb-dubai-portrait--preview' : 'bb-dubai-portrait'}
+      data-builtin-skin={skinId}
+    >
+      {skinId === 'bb-dubai-purple' ? (
+        <BbDubaiPurpleArt interactive={!preview} />
+      ) : (
+        <img src={bbDubaiPortrait} alt="" draggable={false} />
+      )}
+      <figcaption>
+        {t(skinId === 'bb-dubai-purple' ? 'skin.bbDubaiCharacterTitle' : 'settings.skinBbDubai')}
+        {preview && <strong>{t(lunarSkinNames[skinId])}</strong>}
+      </figcaption>
+    </figure>
+  );
+}
+
+function BbDubaiPurpleArt({ interactive }: { interactive: boolean }) {
+  const motionEnabled = useAppStore(
+    (state) => state.skinBbDubaiAnimated && !state.skinReducedMotion,
+  );
+  const { systemReduced, pageVisible } = useSkinMotion();
+
+  return (
+    <>
+      {motionEnabled && !systemReduced && pageVisible ? (
+        <BbDubaiMotionLoop />
+      ) : (
+        <img src={bbDubaiTrialPortrait} alt="" draggable={false} />
+      )}
+      {interactive && <BbDubaiDialogue pageVisible={pageVisible} />}
+    </>
+  );
+}
+
+function BbDubaiMotionLoop() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playback, setPlayback] = useState<'loading' | 'playing' | 'failed'>('loading');
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    let active = true;
+    video.muted = true;
+    video.play().catch(() => {
+      if (active) setPlayback('failed');
+    });
+    return () => {
+      active = false;
+      video.pause();
+    };
+  }, []);
+
+  return (
+    <>
+      <img src={bbDubaiTrialPortrait} alt="" draggable={false} hidden={playback === 'playing'} />
+      {playback !== 'failed' && (
+        <video
+          ref={videoRef}
+          src={bbDubaiIdleClip}
+          data-playing={playback === 'playing'}
+          onPlaying={() => setPlayback('playing')}
+          onPause={() => setPlayback((current) => (current === 'playing' ? 'loading' : current))}
+          onError={() => setPlayback('failed')}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+      )}
+    </>
+  );
+}
+
 function SkinScene({
   skinId,
   preview,
 }: {
-  skinId: Exclude<BuiltinSkinId, 'default'>;
+  skinId: Extract<BuiltinSkinId, 'deepseek' | 'naiwa'>;
   preview: boolean;
 }) {
   const { t } = useTranslation();

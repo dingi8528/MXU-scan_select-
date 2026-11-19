@@ -83,24 +83,30 @@ test('desktop skin preferences survive config round trips and old configurations
     const untouchedBrowserPreferences = h.data.get(appearanceKey);
     h.store.useAppStore
       .getState()
-      .importConfig(config({ skinId: 'naiwa', skinReducedMotion: true }));
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+      .importConfig(config({ skinId: 'bb-dubai', skinReducedMotion: true }));
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
+    assert.equal(h.store.useAppStore.getState().skinBbDubaiAnimated, true);
+    h.store.useAppStore.getState().setSkinBbDubaiAnimated(false);
     h.store.useAppStore.getState().setConfigPersistenceReady(true);
     const saved = h.store.flushConfig();
     assert.ok(saved);
-    assert.equal(saved.settings.skinId, 'naiwa');
+    assert.equal(saved.settings.skinId, 'bb-dubai');
     assert.equal(saved.settings.skinReducedMotion, true);
+    assert.equal(saved.settings.skinBbDubaiAnimated, false);
     h.store.useAppStore.getState().setSkinId('default');
     h.store.useAppStore.getState().setSkinReducedMotion(false);
+    h.store.useAppStore.getState().setSkinBbDubaiAnimated(true);
     h.store.useAppStore.getState().importConfig(saved);
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
+    assert.equal(h.store.useAppStore.getState().skinBbDubaiAnimated, false);
     assert.equal(h.data.get(appearanceKey), untouchedBrowserPreferences);
 
     h.store.useAppStore.getState().importConfig(config());
     assert.equal(h.store.useAppStore.getState().skinId, 'default');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, false);
+    assert.equal(h.store.useAppStore.getState().skinBbDubaiAnimated, true);
     const invalid = config();
     Object.assign(invalid.settings, { skinId: 'external-skin', skinReducedMotion: 'true' });
     h.store.useAppStore.getState().importConfig(invalid);
@@ -130,7 +136,7 @@ test('switching a built-in skin leaves running tasks, runtime state and theme pr
       theme: 'dark',
       accentColor: 'emerald',
     });
-    for (const skinId of ['deepseek', 'naiwa', 'default'] as const) {
+    for (const skinId of ['deepseek', 'naiwa', 'bb-dubai', 'bb-dubai-purple', 'default'] as const) {
       h.store.useAppStore.getState().setSkinId(skinId);
       h.store.useAppStore.getState().setSkinReducedMotion(true);
       const state = h.store.useAppStore.getState();
@@ -180,9 +186,9 @@ test('WebUI skin preferences remain local when saving unrelated backend configur
     assert.equal(h.appearance.loadWebUIAppearance()?.skinId, 'default');
     assert.equal(h.appearance.loadWebUIAppearance()?.skinReducedMotion, true);
 
-    h.appearance.patchWebUIAppearance({ skinId: 'naiwa', skinReducedMotion: true });
+    h.appearance.patchWebUIAppearance({ skinId: 'bb-dubai-purple', skinReducedMotion: true });
     h.store.useAppStore.getState().importConfig(config());
-    assert.equal(h.store.useAppStore.getState().skinId, 'naiwa');
+    assert.equal(h.store.useAppStore.getState().skinId, 'bb-dubai-purple');
     assert.equal(h.store.useAppStore.getState().skinReducedMotion, true);
     const legacySaved = h.store.captureConfigForDraft();
     assert.ok(legacySaved);
@@ -258,12 +264,14 @@ test('the first local skin edit preserves inherited appearance on reload, includ
         },
       },
     ];
-    for (const setting of ['skinId', 'skinReducedMotion'] as const) {
+    for (const setting of ['skinId', 'skinReducedMotion', 'skinBbDubaiAnimated'] as const) {
       h.data.delete(appearanceKey);
       h.store.useAppStore.getState().importConfig(backend);
       assert.equal(h.appearance.loadWebUIAppearance(), null);
       if (setting === 'skinId') h.store.useAppStore.getState().setSkinId('naiwa');
-      else h.store.useAppStore.getState().setSkinReducedMotion(true);
+      else if (setting === 'skinReducedMotion')
+        h.store.useAppStore.getState().setSkinReducedMotion(true);
+      else h.store.useAppStore.getState().setSkinBbDubaiAnimated(false);
 
       const savedLocal = h.appearance.loadWebUIAppearance();
       assert.ok(savedLocal);
@@ -275,6 +283,7 @@ test('the first local skin edit preserves inherited appearance on reload, includ
       assert.deepEqual(savedLocal.customAccents, backend.customAccents);
       assert.equal(savedLocal.skinId, setting === 'skinId' ? 'naiwa' : 'default');
       assert.equal(savedLocal.skinReducedMotion, setting === 'skinReducedMotion');
+      assert.equal(savedLocal.skinBbDubaiAnimated, setting !== 'skinBbDubaiAnimated');
 
       // A fresh configuration import reads the local record just as a browser reload would.
       h.store.useAppStore.getState().importConfig(backend);
@@ -289,11 +298,13 @@ test('the first local skin edit preserves inherited appearance on reload, includ
       assert.deepEqual(restored.customAccents, backend.customAccents);
       assert.equal(restored.skinId, savedLocal.skinId);
       assert.equal(restored.skinReducedMotion, savedLocal.skinReducedMotion);
+      assert.equal(restored.skinBbDubaiAnimated, savedLocal.skinBbDubaiAnimated);
 
       const savedBackend = h.store.captureConfigForDraft();
       assert.ok(savedBackend);
       assert.equal(savedBackend.settings.skinId, 'default');
       assert.equal(savedBackend.settings.skinReducedMotion, false);
+      assert.equal(savedBackend.settings.skinBbDubaiAnimated, true);
       assert.equal(savedBackend.settings.theme, 'dark');
       assert.equal(savedBackend.settings.language, 'zh-CN');
       assert.equal(savedBackend.settings.accentColor, 'deepsea');

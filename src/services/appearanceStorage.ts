@@ -22,6 +22,7 @@ export interface WebUIAppearance {
   accentColor: AccentColor;
   skinId: BuiltinSkinId;
   skinReducedMotion: boolean;
+  skinBbDubaiAnimated: boolean;
   language: Language;
   backgroundImage?: string;
   backgroundOpacity: number;
@@ -33,6 +34,7 @@ const defaultAppearance: WebUIAppearance = {
   accentColor: 'emerald',
   skinId: 'default',
   skinReducedMotion: false,
+  skinBbDubaiAnimated: true,
   language: 'system',
   backgroundOpacity: 50,
   customAccents: [],
@@ -50,6 +52,7 @@ export function loadWebUIAppearance(): WebUIAppearance | null {
       ...appearance,
       skinId: normalizeBuiltinSkinId(appearance.skinId),
       skinReducedMotion: appearance.skinReducedMotion === true,
+      skinBbDubaiAnimated: appearance.skinBbDubaiAnimated !== false,
     };
   } catch {
     log.warn('WebUI 外观设置加载失败，将使用默认值');
@@ -65,6 +68,7 @@ export function saveWebUIAppearance(appearance: WebUIAppearance): void {
         ...appearance,
         skinId: normalizeBuiltinSkinId(appearance.skinId),
         skinReducedMotion: appearance.skinReducedMotion === true,
+        skinBbDubaiAnimated: appearance.skinBbDubaiAnimated !== false,
       }),
     );
   } catch {
@@ -145,6 +149,7 @@ export function patchWebUILayout(patch: Partial<WebUILayout>): void {
 let _backendAppearance: Partial<WebUIAppearance> = {
   skinId: 'default',
   skinReducedMotion: false,
+  skinBbDubaiAnimated: true,
 };
 let _backendLayout: Partial<WebUILayout> = {};
 
@@ -154,6 +159,7 @@ export function cacheBackendAppearance(
     accentColor?: AccentColor;
     skinId?: unknown;
     skinReducedMotion?: unknown;
+    skinBbDubaiAnimated?: unknown;
     language?: Language;
     backgroundImage?: string;
     backgroundOpacity?: number;
@@ -165,6 +171,7 @@ export function cacheBackendAppearance(
     accentColor: settings.accentColor as AccentColor,
     skinId: normalizeBuiltinSkinId(settings.skinId),
     skinReducedMotion: settings.skinReducedMotion === true,
+    skinBbDubaiAnimated: settings.skinBbDubaiAnimated !== false,
     language: settings.language as Language,
     backgroundImage: settings.backgroundImage,
     backgroundOpacity: settings.backgroundOpacity,

@@ -10,7 +10,7 @@ import jaJP from '../src/i18n/locales/ja-JP.ts';
 import koKR from '../src/i18n/locales/ko-KR.ts';
 
 test('skin IDs accept only bundled choices and old or unrecognized values use the default interface', () => {
-  for (const id of ['default', 'deepseek', 'naiwa'] as const)
+  for (const id of ['default', 'deepseek', 'naiwa', 'bb-dubai', 'bb-dubai-purple'] as const)
     assert.equal(normalizeBuiltinSkinId(id), id);
   for (const value of [
     undefined,
@@ -61,13 +61,20 @@ function flattenStrings(value: Record<string, unknown>, prefix = ''): Record<str
   );
 }
 
-test('skin controls and factual task labels are translated without invented character dialogue in all five languages', () => {
+test('skin controls, task labels and BB dialogue are translated in all five languages', () => {
   const resources = { enUS, zhCN, zhTW, jaJP, koKR };
   const expected = flattenStrings(enUS.skin);
   const settingKeys = Object.keys(enUS.settings)
     .filter((key) => key.startsWith('skin'))
     .sort();
   for (const [language, translation] of Object.entries(resources)) {
+    const { idle, click, start, success } = translation.skin.bbDubaiDialogue;
+    assert.equal(idle.length, 12, language);
+    assert.equal(new Set(idle).size, idle.length, language);
+    assert.equal(click.length, 12, language);
+    assert.equal(new Set(click).size, click.length, language);
+    assert.equal(typeof start, 'string', language);
+    assert.equal(typeof success, 'string', language);
     const messages = flattenStrings(translation.skin);
     assert.deepEqual(Object.keys(messages).sort(), Object.keys(expected).sort(), language);
     assert.equal(Object.hasOwn(translation.skin, 'deepseek'), false, language);

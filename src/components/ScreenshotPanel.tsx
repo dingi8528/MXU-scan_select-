@@ -358,10 +358,12 @@ export function ScreenshotPanel() {
   return (
     <div
       data-skin-slot="screenshot"
+      data-expanded={screenshotPanelExpanded}
       className="bg-bg-secondary rounded-lg ring-1 ring-inset ring-border overflow-hidden"
     >
       {/* 标题栏（可点击折叠） */}
       <div
+        data-skin-slot="screenshot-header"
         role="button"
         tabIndex={0}
         onClick={() => setScreenshotPanelExpanded(!screenshotPanelExpanded)}
@@ -432,13 +434,14 @@ export function ScreenshotPanel() {
 
       {/* 可折叠内容 - 使用 grid 动画实现平滑展开/折叠 */}
       <div
+        data-skin-slot="screenshot-body"
         className="grid transition-[grid-template-rows] duration-150 ease-out"
         style={{ gridTemplateRows: screenshotPanelExpanded ? '1fr' : '0fr' }}
       >
-        <div className="overflow-hidden min-h-0">
+        <div data-skin-slot="screenshot-content" className="overflow-hidden min-h-0">
           {/* 分隔线放在 overflow-hidden 内部，避免展开瞬间闪烁 */}
           <div className="border-t border-border" />
-          <div className="p-3">
+          <div data-skin-slot="screenshot-preview" className="p-3">
             {/* 截图区域 */}
             <div
               data-skin-slot="screenshot-screen"
@@ -461,7 +464,10 @@ export function ScreenshotPanel() {
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-center gap-2 text-text-muted">
+                <div
+                  data-skin-slot="screenshot-placeholder"
+                  className="flex flex-col items-center gap-2 text-text-muted"
+                >
                   <Monitor className="w-10 h-10 opacity-30" />
                   {captureFailed ? (
                     <span className="text-xs text-error">{t('screenshot.streamFailed')}</span>

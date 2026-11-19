@@ -331,11 +331,13 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
       const targetId = targetInstance.id;
       const targetTasks = targetInstance.selectedTasks || [];
       lastStartCancelledRef.current = false;
+      let failureStage: 'controller' | 'resource' | undefined;
 
       const failStart = (reason: string): false => {
         const message = `${t('taskList.autoConnect.startFailed')}: ${reason}`;
         log.warn(`实例 ${targetInstance.name}: ${message}`);
         addLog(targetId, { type: 'error', message });
+        if (failureStage) maaService.reportTaskStartFailure(targetId, failureStage);
         onPhaseChange?.('idle');
         return false;
       };
@@ -449,6 +451,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
           savedDevice.playcoverAddress),
       );
       if (!controller) {
+        failureStage = 'controller';
         return failStart(t('errors.controllerNotFound'));
       }
 
@@ -777,6 +780,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
           await maaService.createInstance(targetId).catch((err) => {
             log.warn('创建实例失败（可能已存在）:', err);
           });
+          failureStage = 'controller';
 
           let config: ControllerConfig | null = null;
           let deviceName = '';
@@ -946,6 +950,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
           if (!connectResult) {
             return failStart(t('taskList.autoConnect.connectFailed'));
           }
+          failureStage = undefined;
 
           if (shouldDelayAfterAdbConnected) {
             const delaySec = useAppStore.getState().preActionConnectDelaySec ?? 5;
@@ -974,6 +979,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
 
         // 如果资源未加载，尝试自动加载
         if (!isResourceReallyLoaded && resource) {
+          failureStage = 'resource';
           log.info(`实例 ${targetInstance.name}: 加载资源...`);
           onPhaseChange?.('loading_resource');
 
@@ -999,6 +1005,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
           if (!loadResult) {
             return failStart(t('taskList.autoConnect.resourceFailed'));
           }
+          failureStage = undefined;
         }
 
         onPhaseChange?.('idle');
@@ -1179,6 +1186,7 @@ export function Toolbar({ showAddPanel, onToggleAddPanel, className }: ToolbarPr
           if (backendStates) useAppStore.getState().restoreBackendStates(backendStates);
           return false;
         }
+        if (!cancelled && failureStage) maaService.reportTaskStartFailure(targetId, failureStage);
 
         const failedAgentConfigs = normalizeAgentConfigs(projectInterface?.agent);
         if (failedAgentConfigs && failedAgentConfigs.length > 0) {

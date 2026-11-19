@@ -2,8 +2,9 @@
 //!
 //! 提供路径处理和其他通用工具函数
 
-use super::types::{MaaCallbackEvent, MaaState, StateChangedEvent};
+use super::types::{MaaCallbackEvent, MaaState, StateChangedEvent, TaskFailureReason, TaskRunEvent};
 use crate::ws_broadcast::{WsBroadcast, WsEvent};
+use std::cell::Cell;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager};
@@ -42,19 +43,28 @@ pub fn emit_callback_event<S: Into<String>>(
 ///
 /// Tauri 端和 WebUI 端都会收到此事件，用于刷新 `isRunning`、连接状态等运行时信息。
 pub fn emit_state_changed(app: &AppHandle, instance_id: &str, kind: &str) {
-    // 广播到所有 WebSocket 客户端
-    if let Some(ws) = app.try_state::<Arc<WsBroadcast>>() {
-        ws.send(WsEvent::StateChanged {
-            instance_id: instance_id.to_string(),
-            kind: kind.to_string(),
-        });
-    }
+    emit_state_changed_with_task_event(app, instance_id, kind, None, None);
+}
 
-    // 发送到 Tauri WebView
+pub(super) fn emit_state_changed_with_task_event(
+    app: &AppHandle,
+    instance_id: &str,
+    kind: &str,
+    task_run_event: Option<TaskRunEvent>,
+    task_failure_reason: Option<TaskFailureReason>,
+) {
     let event = StateChangedEvent {
         instance_id: instance_id.to_string(),
         kind: kind.to_string(),
+        task_run_event,
+        task_failure_reason,
     };
+    // 广播到所有 WebSocket 客户端
+    if let Some(ws) = app.try_state::<Arc<WsBroadcast>>() {
+        ws.send(WsEvent::StateChanged(event.clone()));
+    }
+
+    // 发送到 Tauri WebView
     if let Err(e) = app.emit("state-changed", event) {
         log::error!("Failed to emit state-changed: {}", e);
     }
@@ -94,6 +104,7 @@ pub fn handle_task_callback(
         .as_ref()
         .and_then(|v| v.get("entry").and_then(|e| e.as_str()));
     let mut completion = None;
+    let first_task_started;
     {
         let mut instances = match maa_state.instances.lock() {
             Ok(g) => g,
@@ -124,6 +135,9 @@ pub fn handle_task_callback(
         if !is_started {
             instance.task_results.insert(task_id, is_succeeded);
         }
+
+        first_task_started = is_started && !instance.stop_in_progress && !instance.first_task_started;
+        instance.first_task_started |= first_task_started;
 
         let state = &mut instance.task_run_state;
 
@@ -163,7 +177,14 @@ pub fn handle_task_callback(
         super::telemetry::on_task_finished(instance_id, task_id, is_succeeded);
     }
     // 通知前端刷新状态
-    emit_state_changed(app, instance_id, "task-progress");
+    // Appends and subsequent tasks in the same queue only update progress.
+    emit_state_changed_with_task_event(
+        app,
+        instance_id,
+        "task-progress",
+        first_task_started.then_some(TaskRunEvent::Started),
+        None,
+    );
     if let Some((tasker, completion)) = completion {
         schedule_run_completion(maa_state, app, instance_id, tasker, completion);
     }
@@ -270,6 +291,7 @@ pub(super) fn schedule_run_completion(
     // The framework can become idle only after its callback returns. Never
     // disconnect synchronously on the callback dispatch thread.
     std::thread::spawn(move || {
+        let task_run_result = Cell::new((None, None));
         completion.finish_when_idle(
             || {
                 tasker.as_ref().is_some_and(|tasker| tasker.running())
@@ -295,6 +317,11 @@ pub(super) fn schedule_run_completion(
                             if instance.has_unfinished_queue() {
                                 instance.begin_stop();
                             }
+                            let event = instance.task_run_completion_event();
+                            let reason = (event == Some(TaskRunEvent::Failed)
+                                && instance.submission_failed)
+                                .then_some(TaskFailureReason::Submission);
+                            task_run_result.set((event, reason));
                             (
                                 std::mem::take(&mut instance.agent_clients),
                                 std::mem::take(&mut instance.agent_children),
@@ -316,7 +343,16 @@ pub(super) fn schedule_run_completion(
                     super::maa_agent::stop_agent_resources(clients, children);
                 }
             },
-            || emit_state_changed(&app, &instance_id, "tasks-completed"),
+            || {
+                let (event, reason) = task_run_result.get();
+                emit_state_changed_with_task_event(
+                    &app,
+                    &instance_id,
+                    "tasks-completed",
+                    event,
+                    reason,
+                )
+            },
         );
     });
 }

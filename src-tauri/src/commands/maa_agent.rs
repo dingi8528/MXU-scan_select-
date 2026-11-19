@@ -778,6 +778,23 @@ pub async fn start_tasks_impl(
                             let _ = child.kill();
                             let _ = child.wait();
                         }
+                        if reset_state
+                            && maa_state.instances.lock().ok().is_some_and(|instances| {
+                                instances.get(&instance_id).is_some_and(|instance| {
+                                    Arc::ptr_eq(&instance.run_completion, &completion)
+                                        && !instance.stop_in_progress
+                                        && !completion.submission_cancelled()
+                                })
+                            })
+                        {
+                            super::utils::emit_state_changed_with_task_event(
+                                &app,
+                                &instance_id,
+                                "task-start-failed",
+                                Some(super::types::TaskRunEvent::Failed),
+                                Some(super::types::TaskFailureReason::Agent),
+                            );
+                        }
                         return Err(format!("Agent start failed: {}", e));
                     }
                 }

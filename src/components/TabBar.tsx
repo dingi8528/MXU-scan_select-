@@ -15,9 +15,14 @@ import {
   GripVertical,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
+  ChevronsUp,
+  ChevronsDown,
   PanelRightClose,
+  PanelBottomClose,
   Bell,
   History,
   Share2,
@@ -51,6 +56,7 @@ export function TabBar({
   orientation?: 'horizontal' | 'vertical';
 }) {
   const { t } = useTranslation();
+  const vertical = orientation === 'vertical';
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [closeConfirm, setCloseConfirm] = useState<CloseConfirmData>(null);
@@ -252,29 +258,29 @@ export function TabBar({
         { id: 'divider-1', label: '', divider: true },
         {
           id: 'move-left',
-          label: t('contextMenu.moveLeft'),
-          icon: ChevronLeft,
+          label: t(vertical ? 'contextMenu.moveUp' : 'contextMenu.moveLeft'),
+          icon: vertical ? ChevronUp : ChevronLeft,
           disabled: isFirst,
           onClick: () => reorderInstances(instanceIndex, instanceIndex - 1),
         },
         {
           id: 'move-right',
-          label: t('contextMenu.moveRight'),
-          icon: ChevronRight,
+          label: t(vertical ? 'contextMenu.moveDown' : 'contextMenu.moveRight'),
+          icon: vertical ? ChevronDown : ChevronRight,
           disabled: isLast,
           onClick: () => reorderInstances(instanceIndex, instanceIndex + 1),
         },
         {
           id: 'move-first',
-          label: t('contextMenu.moveToFirst'),
-          icon: ChevronsLeft,
+          label: t(vertical ? 'contextMenu.moveToTop' : 'contextMenu.moveToFirst'),
+          icon: vertical ? ChevronsUp : ChevronsLeft,
           disabled: isFirst,
           onClick: () => reorderInstances(instanceIndex, 0),
         },
         {
           id: 'move-last',
-          label: t('contextMenu.moveToLast'),
-          icon: ChevronsRight,
+          label: t(vertical ? 'contextMenu.moveToBottom' : 'contextMenu.moveToLast'),
+          icon: vertical ? ChevronsDown : ChevronsRight,
           disabled: isLast,
           onClick: () => reorderInstances(instanceIndex, instances.length - 1),
         },
@@ -303,12 +309,12 @@ export function TabBar({
         },
         {
           id: 'close-right',
-          label: t('contextMenu.closeTabsToRight'),
-          icon: PanelRightClose,
+          label: t(vertical ? 'contextMenu.closeTabsBelow' : 'contextMenu.closeTabsToRight'),
+          icon: vertical ? PanelBottomClose : PanelRightClose,
           disabled: instanceIndex >= instances.length - 1,
           onClick: () => {
-            const rightInstanceIds = instances.slice(instanceIndex + 1).map((inst) => inst.id);
-            requestCloseTabs(rightInstanceIds);
+            const followingInstanceIds = instances.slice(instanceIndex + 1).map((inst) => inst.id);
+            requestCloseTabs(followingInstanceIds);
           },
         },
       ];
@@ -325,6 +331,7 @@ export function TabBar({
       projectInterface,
       confirmBeforeDelete,
       startTabCloseAnimation,
+      vertical,
     ],
   );
 
@@ -452,7 +459,7 @@ export function TabBar({
 
               {editingId === instance.id ? (
                 <div
-                  className="flex-1 flex items-center gap-1"
+                  className="flex-1 min-w-0 flex items-center gap-1"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <input
@@ -463,7 +470,7 @@ export function TabBar({
                     onBlur={handleSaveEdit}
                     autoFocus
                     className={clsx(
-                      'flex-1 w-full px-1 py-0.5 text-sm rounded border border-accent',
+                      'flex-1 min-w-0 w-full px-1 py-0.5 text-sm rounded border border-accent',
                       'bg-bg-primary text-text-primary',
                       'focus:outline-none',
                     )}
@@ -494,7 +501,10 @@ export function TabBar({
                   {instance.isRunning && (
                     <span className="w-2 h-2 rounded-full bg-accent task-running-indicator flex-shrink-0" />
                   )}
-                  <span className="flex-1 truncate text-sm" title={t('titleBar.renameInstance')}>
+                  <span
+                    className="flex-1 truncate text-sm"
+                    title={vertical ? instance.name : t('titleBar.renameInstance')}
+                  >
                     {instance.name}
                   </span>
                   {!isClosing && (

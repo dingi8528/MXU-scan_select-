@@ -4,7 +4,8 @@ export default {
     desktopOnly: 'Open local files in the MXU desktop app.',
     untrustedSource: 'Links in online descriptions cannot launch local files.',
     openFailed: 'Failed to open the local file',
-    notFound: 'The local file or folder is missing. Check that the application package is complete.',
+    notFound:
+      'The local file or folder is missing. Check that the application package is complete.',
   },
   pi: {
     PI_DISPLAY_OPTIONS_INVALID:
@@ -69,6 +70,47 @@ export default {
     instruments: 'Devices and screen',
     deepseekScene: 'The rice submarine',
     naiwaScene: 'Naiwa’s pond',
+    bbDubaiCharacterTitle: 'Lunar Management AI',
+    bbDubaiDialogue: {
+      trigger: 'Talk to BB',
+      idle: [
+        'The moonlight is ready. Are you, Senpai?',
+        'Take your time. Elegance and stalling are so easily confused.',
+        'A perfect opening calls for a well-timed pause.',
+        'This page is almost grand enough for me.',
+        'Even in standby, one must keep up lunar etiquette.',
+        'Do try to relax with a little grace, Senpai.',
+        'Make yourself at home in the lunar VIP seats. I’ll grade your posture.',
+        'Today’s special program? Allow me to keep you in suspense.',
+        'Shh. Even the clock is keeping time for me.',
+        'Lunar forecast. An excellent evening for formal wear.',
+        'If you intend to applaud, do save it for the finale.',
+        'Daydreaming is permitted. I’ll decide for how long.',
+      ],
+      click: [
+        'Oh? Did someone call for the host?',
+        'A special reception. Full marks, if you please♡',
+        'No appointment needed. Just this once, Senpai.',
+        'A precise click. Do keep it up next time.',
+        'An encore? What impeccable timing, Senpai.',
+        'I’m listening. Impress your host in one sentence.',
+        'Need me to teach you how to say hello, Sen-pai?',
+        'I’ll take the attention. Try a compliment next time.',
+        'I heard the applause. A little louder next time, please.',
+        'Time for VIP questions. Have one ready, Senpai.',
+        'If you wanted my attention, congratulations.',
+        'Poking the host is outside the scope of the tour♡',
+      ],
+      start: 'Places, Senpai. The show begins.',
+      success: 'A fine finish. I’ll think about full marks♡',
+      failure: {
+        unknown: 'The run didn’t succeed. Please check Logs, Senpai.',
+        submission: 'At least one task wasn’t submitted. Check Logs for details.',
+        controller: 'Couldn’t connect to the device. Check Logs for details.',
+        resource: 'Couldn’t load resources. Check Logs for details.',
+        agent: 'The task helper (Agent) couldn’t start. Please check Logs.',
+      },
+    },
     taskCount: '{{count}} tasks enabled',
     regionLabel: 'Skin companion',
     state: {
@@ -109,6 +151,11 @@ export default {
     skinDefault: 'Default',
     skinDeepseek: 'Blue Fat Fish',
     skinNaiwa: 'Naiwa',
+    skinBbDubai: 'BB Dubai',
+    skinBbDubaiAnimated: 'Play BB’s animation',
+    skinBbDubaiAnimatedHint:
+      'Loops silently, including while tasks run. Turn this off or reduce motion to show the static portrait.',
+    skinChaldeaCommand: 'Chaldea Command Room',
     skinReducedMotion: 'Reduce skin motion',
     skinReducedMotionHint:
       'Reduce continuous animation. Your system’s reduced motion preference also applies.',
@@ -392,7 +439,8 @@ export default {
     useCmdHint:
       'When enabled, launches the program via cmd /c to detach from the current process tree. Some games may detect the process tree (Windows only)',
     startupDelay: 'Startup Delay',
-    startupDelayHint: 'Wait the specified seconds after execution before continuing, useful for waiting for emulators to fully start',
+    startupDelayHint:
+      'Wait the specified seconds after execution before continuing, useful for waiting for emulators to fully start',
     startupDelaySuffix: 'sec',
     startupDelayCountdown: 'Pre-program {{name}} completed, waiting {{seconds}} seconds...',
     preActionSkipped: 'Pre-program {{name}} is already running, skipped',
@@ -933,6 +981,7 @@ export default {
     closeOtherTabs: 'Close Other Tabs',
     closeAllTabs: 'Close All Tabs',
     closeTabsToRight: 'Close Tabs to the Right',
+    closeTabsBelow: 'Close Tabs Below',
     exportConfig: 'Export Config',
     exportToClipboard: 'Export to Clipboard',
     exportToTxt: 'Export as txt File',
