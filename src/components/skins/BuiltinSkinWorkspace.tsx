@@ -172,7 +172,7 @@ export function BuiltinSkinWorkspace({
           style={{ gridTemplateRows: showAddPanel ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden min-h-0">
-            <AddTaskPanel />
+            <AddTaskPanel fitAvailableHeight={lunar} />
           </div>
         </div>
         <Toolbar showAddPanel={showAddPanel} onToggleAddPanel={onToggleAddPanel} />
