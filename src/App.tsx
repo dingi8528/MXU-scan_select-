@@ -450,19 +450,18 @@ function AppContent() {
       const style = getComputedStyle(workspace);
       const area = workspace.getBoundingClientRect();
       const handle = e.currentTarget.getBoundingClientRect();
-      const leftPadding = parseFloat(style.paddingLeft);
-      const rightPadding = parseFloat(style.paddingRight);
+      const taskPanel = workspace.querySelector('[data-skin-slot="task-panel"]');
+      const taskLeft =
+        taskPanel?.getBoundingClientRect().left ?? area.left + parseFloat(style.paddingLeft);
+      const rightEdge = area.right - parseFloat(style.paddingRight);
       const dividerWidth = parseFloat(style.getPropertyValue('--bb-divider-width'));
       const minTaskWidth = parseFloat(style.getPropertyValue('--bb-task-min-width'));
       const minWidth = parseFloat(style.getPropertyValue('--bb-sidebar-min-width'));
       // Preserve the grab point within the handle and use the scene's padded content bounds.
       sceneResizeBounds.current = {
-        rightEdge: area.right - rightPadding - handle.right + e.clientX,
+        rightEdge: rightEdge - handle.right + e.clientX,
         minWidth,
-        maxWidth: Math.min(
-          800,
-          area.width - leftPadding - rightPadding - dividerWidth - minTaskWidth,
-        ),
+        maxWidth: Math.min(800, rightEdge - taskLeft - dividerWidth - minTaskWidth),
       };
     }
     isResizingRef.current = true;

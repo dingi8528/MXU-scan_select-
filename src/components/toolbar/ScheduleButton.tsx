@@ -43,7 +43,9 @@ export function ScheduleButton({
         }
       >
         <Clock className={clsx('w-4 h-4', scheduleExecution && 'animate-pulse')} />
-        <span className="hidden sm:inline">{t('schedule.button')}</span>
+        <span data-skin-slot="schedule-label" className="hidden sm:inline">
+          {t('schedule.button')}
+        </span>
         {/* 启用数量徽章 */}
         {enabledCount > 0 && !showPanel && !scheduleExecution && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-accent text-white text-xs font-medium rounded-full">

@@ -921,6 +921,7 @@ export default {
     closeOtherTabs: '다른 탭 닫기',
     closeAllTabs: '모든 탭 닫기',
     closeTabsToRight: '오른쪽 탭 닫기',
+    closeTabsBelow: '아래쪽 탭 닫기',
     exportConfig: '설정 내보내기',
     exportToClipboard: '클립보드로 내보내기',
     exportToTxt: 'txt 파일로 내보내기',

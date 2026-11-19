@@ -937,6 +937,7 @@ export default {
     closeOtherTabs: '他のタブを閉じる',
     closeAllTabs: 'すべてのタブを閉じる',
     closeTabsToRight: '右側のタブを閉じる',
+    closeTabsBelow: '下のタブを閉じる',
     exportConfig: '設定をエクスポート',
     exportToClipboard: 'クリップボードへエクスポート',
     exportToTxt: 'txt ファイルとしてエクスポート',

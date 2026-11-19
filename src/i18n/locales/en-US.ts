@@ -941,6 +941,7 @@ export default {
     closeOtherTabs: 'Close Other Tabs',
     closeAllTabs: 'Close All Tabs',
     closeTabsToRight: 'Close Tabs to the Right',
+    closeTabsBelow: 'Close Tabs Below',
     exportConfig: 'Export Config',
     exportToClipboard: 'Export to Clipboard',
     exportToTxt: 'Export as txt File',

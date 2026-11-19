@@ -904,6 +904,7 @@ export default {
     closeOtherTabs: '关闭其他标签页',
     closeAllTabs: '关闭所有标签页',
     closeTabsToRight: '关闭右侧标签页',
+    closeTabsBelow: '关闭下方标签页',
     exportConfig: '导出配置',
     exportToClipboard: '导出到剪贴板',
     exportToTxt: '导出为 txt 文件',

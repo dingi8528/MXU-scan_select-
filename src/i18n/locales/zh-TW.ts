@@ -889,6 +889,7 @@ export default {
     closeOtherTabs: '關閉其他標籤頁',
     closeAllTabs: '關閉所有標籤頁',
     closeTabsToRight: '關閉右側標籤頁',
+    closeTabsBelow: '關閉下方標籤頁',
     exportConfig: '匯出設定',
     exportToClipboard: '匯出到剪貼簿',
     exportToTxt: '匯出為 txt 檔案',

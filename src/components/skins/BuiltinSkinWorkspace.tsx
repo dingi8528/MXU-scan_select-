@@ -158,7 +158,7 @@ export function BuiltinSkinWorkspace({
             {ocean ? <Waves /> : <Sprout />}
           </div>
         )}
-        <TabBar orientation={ocean && !mobile ? 'vertical' : 'horizontal'} />
+        <TabBar orientation={(ocean || lunar) && !mobile ? 'vertical' : 'horizontal'} />
       </nav>
       <section className="scene-tasks" data-skin-slot="task-panel">
         <div className="scene-task-heading">
