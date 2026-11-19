@@ -9,6 +9,7 @@
 import { createLogger } from '@/utils/logger';
 import { suspendConfigSync } from '@/services/configService';
 import type { ConfigChangedEvent } from '@/utils/configSync';
+import type { StateChangedEvent, TaskRunEvent } from '@/types/maa';
 import { getWebSocketUrl } from '@/utils/backendApi';
 
 const log = createLogger('wsService');
@@ -33,7 +34,7 @@ export type WsMessage =
   | { type: 'maa-callback'; payload: WsMaaCallbackPayload }
   | { type: 'maa-agent-output'; payload: WsAgentOutputPayload }
   | { type: 'config-changed'; payload: ConfigChangedEvent }
-  | { type: 'state-changed'; payload: { instance_id: string; kind: string } };
+  | { type: 'state-changed'; payload: StateChangedEvent };
 
 // ============================================================================
 // 订阅者类型
@@ -42,7 +43,7 @@ export type WsMessage =
 type MaaCallbackHandler = (message: string, details: string, instanceId?: string | null) => void;
 type AgentOutputHandler = (instanceId: string, stream: string, line: string) => void;
 type ConfigChangedHandler = (event: ConfigChangedEvent | undefined) => void;
-type StateChangedHandler = (instanceId: string, kind: string) => void;
+type StateChangedHandler = (instanceId: string, kind: string, taskRunEvent?: TaskRunEvent) => void;
 type ConnectionStatusHandler = (connected: boolean) => void;
 
 // ============================================================================
@@ -154,7 +155,9 @@ function onMessage(event: MessageEvent) {
       configChangedHandlers.forEach((h) => h(msg.payload));
       break;
     case 'state-changed':
-      stateChangedHandlers.forEach((h) => h(msg.payload.instance_id, msg.payload.kind));
+      stateChangedHandlers.forEach((h) =>
+        h(msg.payload.instance_id, msg.payload.kind, msg.payload.task_run_event),
+      );
       break;
     default:
       log.debug('收到未知 WS 消息类型:', (msg as { type: string }).type);

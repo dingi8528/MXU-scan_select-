@@ -10,6 +10,8 @@ import type {
   ControllerConfig,
   ConnectionStatus,
   TaskStatus,
+  StateChangedEvent,
+  TaskRunEvent,
   AgentConfig,
   TaskConfig,
   ControllerTelemetryInfo,
@@ -155,6 +157,18 @@ export const maaService = {
     return isTauri()
       ? listen<{ instance_id: string; kind: string }>('state-changed', (event) =>
           handle(event.payload.instance_id, event.payload.kind),
+        )
+      : wsService.onStateChanged(handle);
+  },
+  async onTaskRunEvent(
+    callback: (instanceId: string, taskRunEvent: TaskRunEvent) => void,
+  ): Promise<UnlistenFn> {
+    const handle = (instanceId: string, _kind: string, taskRunEvent?: TaskRunEvent) => {
+      if (taskRunEvent) callback(instanceId, taskRunEvent);
+    };
+    return isTauri()
+      ? listen<StateChangedEvent>('state-changed', ({ payload }) =>
+          handle(payload.instance_id, payload.kind, payload.task_run_event),
         )
       : wsService.onStateChanged(handle);
   },

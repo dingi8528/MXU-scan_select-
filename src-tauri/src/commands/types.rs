@@ -231,7 +231,10 @@ impl ControllerConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::{ControllerConfig, ControllerEventSubscribers, InstanceRuntime, MaaCallbackEvent};
+    use super::{
+        ControllerConfig, ControllerEventSubscribers, InstanceRuntime, MaaCallbackEvent,
+        TaskRunEvent,
+    };
 
     #[test]
     fn idle_submission_clears_cancelled_queue_even_without_an_idle_state_query() {
@@ -316,6 +319,10 @@ mod tests {
             instance.submission_failed = rejected;
             let result = instance.queue_result().unwrap();
             assert_eq!(result, !rejected);
+            assert_eq!(
+                instance.task_run_completion_event(),
+                rejected.then_some(TaskRunEvent::Failed)
+            );
             let (_, completion) = instance.begin_completion(result).unwrap();
             assert!(instance.is_running());
             assert!(instance.begin_completion(result).is_none());
@@ -344,6 +351,10 @@ mod tests {
         assert_eq!(instance.queue_result(), None);
         instance.task_results.insert(7, true);
         assert_eq!(instance.queue_result(), Some(false));
+        assert_eq!(
+            instance.task_run_completion_event(),
+            Some(TaskRunEvent::Failed)
+        );
         // Failure does not leak into a later run.
         instance.prepare_submission(false).unwrap();
         assert!(!instance.submission_failed);
@@ -360,6 +371,10 @@ mod tests {
         assert_eq!(
             instance.task_run_state.overall_status.as_deref(),
             Some("Failed")
+        );
+        assert_eq!(
+            instance.task_run_completion_event(),
+            Some(TaskRunEvent::Stopped)
         );
         completion.finish_when_idle(|| false, || {}, || {});
         assert!(!instance.is_running());
@@ -610,6 +625,7 @@ pub struct InstanceRuntime {
     pub run_completion: Arc<super::run_completion::RunCompletion>,
     /// MaaTaskId → succeeded；不依赖可选的 UI selected_task_id 映射。
     pub task_results: HashMap<i64, bool>,
+    pub(super) first_task_started: bool,
     /// A rejected post_task is part of this queue's result even without an ID.
     pub submission_failed: bool,
 }
@@ -642,6 +658,7 @@ impl InstanceRuntime {
         self.stop_started_at = None;
         self.task_ids.clear();
         self.task_results.clear();
+        self.first_task_started = false;
         self.submission_failed = false;
         self.task_run_state.pending_task_ids.clear();
         self.task_run_state.mappings.clear();
@@ -658,6 +675,17 @@ impl InstanceRuntime {
             &self.task_results,
         )
         .map(|succeeded| succeeded && !self.submission_failed && !self.stop_in_progress)
+    }
+
+    pub(super) fn task_run_completion_event(&self) -> Option<TaskRunEvent> {
+        if self.stop_in_progress {
+            return Some(TaskRunEvent::Stopped);
+        }
+        match self.queue_result()? {
+            true if self.task_run_state.pending_task_ids.is_empty() => None,
+            true => Some(TaskRunEvent::Succeeded),
+            false => Some(TaskRunEvent::Failed),
+        }
     }
 
     /// A native Stop can discard accepted IDs without delivering a last callback.
@@ -908,11 +936,22 @@ pub struct MaaCallbackEvent {
     pub details: String,
 }
 
-/// 实例状态变更事件（用于 Tauri WebView 端监听）
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskRunEvent {
+    Started,
+    Succeeded,
+    Failed,
+    Stopped,
+}
+
+/// 同时用于 Tauri WebView 和 WebSocket。任务事件仅随实时通知发送。
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateChangedEvent {
     pub instance_id: String,
     pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_run_event: Option<TaskRunEvent>,
 }
 
 /// Agent 配置

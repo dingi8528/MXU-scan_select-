@@ -3,6 +3,7 @@
 //! 提供发布-订阅模型，将 Maa 回调、Agent 输出、配置变更等事件
 //! 广播给所有已连接的 WebSocket 客户端。
 
+use crate::commands::types::StateChangedEvent;
 use serde::Serialize;
 use tokio::sync::broadcast;
 
@@ -34,7 +35,7 @@ pub enum WsEvent {
 
     /// Maa 实例状态变更（连接状态、任务状态等）
     #[serde(rename = "state-changed")]
-    StateChanged { instance_id: String, kind: String },
+    StateChanged(StateChangedEvent),
 }
 
 /// 全局广播器，包装 `broadcast::Sender<WsEvent>`

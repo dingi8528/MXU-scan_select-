@@ -1,23 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { maaService } from '@/services/maaService';
 import { useAppStore } from '@/stores/appStore';
+import { loggers } from '@/utils/logger';
 
-const IDLE_MIN_MS = 2 * 60_000;
-const IDLE_MAX_MS = 4 * 60_000;
+const IDLE_INTERVAL_MS = 20_000;
 const LINE_DURATION_MS = 5_000;
 const CLICK_COOLDOWN_MS = 1_000;
-const LINE_COUNTS = { idle: 6, click: 8 } as const;
+const LINE_COUNTS = { idle: 6, click: 8, start: 3, success: 3, failure: 3 } as const;
+const TASK_RUN_LINES = { started: 'start', succeeded: 'success', failed: 'failure' } as const;
 
 type LineKind = keyof typeof LINE_COUNTS;
-type Line = { kind: LineKind; index: number };
+type Line = { kind: LineKind; index: number; instanceId: string | null };
 
 export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
   const { t } = useTranslation();
+  const activeInstanceId = useAppStore((state) => state.activeInstanceId);
   const taskRunning = useAppStore((state) =>
     state.instances.some((instance) => instance.isRunning),
   );
   const [focused, setFocused] = useState(() => document.hasFocus());
   const [line, setLine] = useState<Line | null>(null);
+  const [idleRevision, setIdleRevision] = useState(0);
   const lastLines = useRef<Partial<Record<LineKind, number>>>({});
   const nextClickAt = useRef(0);
   const inForeground = pageVisible && focused;
@@ -39,7 +43,7 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
     const choice = Math.floor(Math.random() * choices);
     const index = previous !== undefined && choice >= previous ? choice + 1 : choice;
     lastLines.current[kind] = index;
-    setLine({ kind, index });
+    setLine({ kind, index, instanceId: useAppStore.getState().activeInstanceId });
   }, []);
 
   useEffect(() => {
@@ -48,11 +52,47 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
   }, [inForeground, taskRunning]);
 
   useEffect(() => {
-    if (!inForeground || taskRunning || line) return;
-    const delay = IDLE_MIN_MS + Math.random() * (IDLE_MAX_MS - IDLE_MIN_MS);
-    const timer = window.setTimeout(() => showLine('idle'), delay);
-    return () => window.clearTimeout(timer);
-  }, [inForeground, taskRunning, line, showLine]);
+    setLine((current) => (current?.instanceId === activeInstanceId ? current : null));
+  }, [activeInstanceId]);
+
+  useEffect(() => {
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+    void maaService
+      .onTaskRunEvent((instanceId, event) => {
+        if (
+          disposed ||
+          useAppStore.getState().activeInstanceId !== instanceId ||
+          document.hidden ||
+          !document.hasFocus()
+        ) {
+          return;
+        }
+        setIdleRevision((revision) => revision + 1);
+        if (event === 'stopped') {
+          setLine((current) => (current?.kind === 'start' ? null : current));
+        } else {
+          showLine(TASK_RUN_LINES[event]);
+        }
+      })
+      .then(
+        (unlisten) => {
+          if (disposed) unlisten();
+          else unsubscribe = unlisten;
+        },
+        (error) => loggers.maa.warn('Failed to subscribe to task run events', error),
+      );
+    return () => {
+      disposed = true;
+      unsubscribe?.();
+    };
+  }, [showLine]);
+
+  useEffect(() => {
+    if (!inForeground || taskRunning) return;
+    const timer = window.setInterval(() => showLine('idle'), IDLE_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [activeInstanceId, idleRevision, inForeground, taskRunning, showLine]);
 
   useEffect(() => {
     if (!line) return;
@@ -64,10 +104,14 @@ export function BbDubaiDialogue({ pageVisible }: { pageVisible: boolean }) {
     const now = performance.now();
     if (now < nextClickAt.current) return;
     nextClickAt.current = now + CLICK_COOLDOWN_MS;
+    setIdleRevision((revision) => revision + 1);
     showLine('click');
   }
 
-  const visibleLine = inForeground && (line?.kind === 'click' || !taskRunning) ? line : null;
+  const visibleLine =
+    inForeground && line?.instanceId === activeInstanceId && (line.kind !== 'idle' || !taskRunning)
+      ? line
+      : null;
 
   return (
     <>

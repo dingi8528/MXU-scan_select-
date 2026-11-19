@@ -100,6 +100,14 @@ export type ConnectionStatus = 'Disconnected' | 'Connecting' | 'Connected' | { F
 /** 任务状态 */
 export type TaskStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed';
 
+export type TaskRunEvent = 'started' | 'succeeded' | 'failed' | 'stopped';
+
+export interface StateChangedEvent {
+  instance_id: string;
+  kind: string;
+  task_run_event?: TaskRunEvent;
+}
+
 /** MaaFramework 初始化状态 */
 export interface MaaInitState {
   initialized: boolean;

@@ -91,6 +91,21 @@ export default {
         'Need me to teach you how to say hello, Sen-pai?',
         'I’ll take the attention. Try a compliment next time.',
       ],
+      start: [
+        'Places, Senpai. The show begins.',
+        'The task has begun. Do make a fine entrance.',
+        'Lights up. You’re on, Senpai.',
+      ],
+      success: [
+        'A fine finish. I’ll think about full marks♡',
+        'And that’s a wrap. A round of applause, please.',
+        'All done. You’ve earned a few points today, Senpai.',
+      ],
+      failure: [
+        'The show stops here. Check the logs first, Senpai.',
+        'A little hitch. The run log is worth a look.',
+        'Before the encore, check the log for what failed.',
+      ],
     },
     taskCount: '{{count}} tasks enabled',
     regionLabel: 'Skin companion',
