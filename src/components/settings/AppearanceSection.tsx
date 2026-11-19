@@ -52,6 +52,8 @@ export function AppearanceSection({
     setSkinId,
     skinReducedMotion,
     setSkinReducedMotion,
+    skinBbDubaiAnimated,
+    setSkinBbDubaiAnimated,
     accentColor,
     setAccentColor,
     customAccents,
@@ -250,6 +252,23 @@ export function AppearanceSection({
             {t('settings.skinReducedMotionHint')}
           </p>
         </div>
+        {skinId === 'bb-dubai-purple' && (
+          <div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+              <input
+                type="checkbox"
+                checked={skinBbDubaiAnimated}
+                onChange={(event) => setSkinBbDubaiAnimated(event.target.checked)}
+                aria-describedby="settings-bb-dubai-motion-hint"
+                className="h-4 w-4 accent-accent"
+              />
+              {t('settings.skinBbDubaiAnimated')}
+            </label>
+            <p id="settings-bb-dubai-motion-hint" className="mt-1 text-xs text-text-muted">
+              {t('settings.skinBbDubaiAnimatedHint')}
+            </p>
+          </div>
+        )}
         {skinId !== 'default' && (
           <div className="rounded-lg bg-bg-tertiary p-3">
             <p className="mb-2 text-xs font-medium text-text-secondary">

@@ -105,6 +105,8 @@ export default {
     skinNaiwa: '奶蛙',
     skinChaldeaCommand: '迦勒底指揮室',
     skinBbDubai: 'BB杜拜',
+    skinBbDubaiAnimated: '播放 BB 親待機動畫',
+    skinBbDubaiAnimatedHint: '待機時靜音循環播放。關閉此項或啟用減少動態效果時，顯示靜態立繪。',
     skinReducedMotion: '減少造型動態效果',
     skinReducedMotionHint: '減少連續動作，同時遵循系統的減少動態效果設定。',
     skinPreview: '造型預覽',

@@ -111,6 +111,7 @@ export interface AppState {
   accentColor: AccentColor;
   skinId: BuiltinSkinId;
   skinReducedMotion: boolean;
+  skinBbDubaiAnimated: boolean;
   language: Language;
   backgroundImage?: string;
   backgroundOpacity: number;
@@ -126,6 +127,7 @@ export interface AppState {
   setAccentColor: (accent: AccentColor) => void;
   setSkinId: (skinId: BuiltinSkinId) => void;
   setSkinReducedMotion: (enabled: boolean) => void;
+  setSkinBbDubaiAnimated: (animated: boolean) => void;
   setLanguage: (lang: Language) => void;
   setBackgroundImage: (path?: string) => void;
   setBackgroundOpacity: (opacity: number) => void;

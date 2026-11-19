@@ -106,6 +106,9 @@ export default {
     skinDeepseek: '파란 뚱보 고래',
     skinNaiwa: '나이와',
     skinBbDubai: 'BB 두바이',
+    skinBbDubaiAnimated: 'BB 대기 애니메이션 재생',
+    skinBbDubaiAnimatedHint:
+      '대기 중 소리 없이 반복 재생합니다. 이 설정을 끄거나 움직임 줄이기를 켜면 정지 이미지가 표시됩니다.',
     skinChaldeaCommand: '칼데아 지휘실',
     skinReducedMotion: '스킨 움직임 줄이기',
     skinReducedMotionHint: '반복되는 움직임을 줄입니다. 시스템의 동작 줄이기 설정도 적용됩니다.',

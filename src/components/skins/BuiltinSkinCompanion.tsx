@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/appStore';
 import { isLunarSkin, lunarSkinNames, type BuiltinSkinId, type LunarSkinId } from '@/skins/types';
 import bbDubaiPortrait from '@/assets/skins/bb-dubai-portrait.webp';
 import bbDubaiTrialPortrait from '@/assets/skins/bb-dubai-trial-portrait.webp';
+import bbDubaiIdleClip from '@/assets/skins/bb-dubai-idle.webm';
 import deepseekArt from '@/assets/skins/deepseek.png';
 import deepseekCalm from '@/assets/skins/deepseek-calm.png';
 import deepseekError from '@/assets/skins/deepseek-error.png';
@@ -41,16 +42,69 @@ function BbDubaiPortrait({ skinId, preview }: { skinId: LunarSkinId; preview: bo
       className={preview ? 'bb-dubai-portrait bb-dubai-portrait--preview' : 'bb-dubai-portrait'}
       data-builtin-skin={skinId}
     >
-      <img
-        src={skinId === 'bb-dubai-purple' ? bbDubaiTrialPortrait : bbDubaiPortrait}
-        alt=""
-        draggable={false}
-      />
+      {skinId === 'bb-dubai-purple' ? (
+        <BbDubaiPurpleArt />
+      ) : (
+        <img src={bbDubaiPortrait} alt="" draggable={false} />
+      )}
       <figcaption>
         {t(skinId === 'bb-dubai-purple' ? 'skin.bbDubaiCharacterTitle' : 'settings.skinBbDubai')}
         {preview && <strong>{t(lunarSkinNames[skinId])}</strong>}
       </figcaption>
     </figure>
+  );
+}
+
+function BbDubaiPurpleArt() {
+  const idleMotionEnabled = useAppStore(
+    (state) =>
+      state.skinBbDubaiAnimated &&
+      !state.skinReducedMotion &&
+      !state.instances.find((instance) => instance.id === state.activeInstanceId)?.isRunning,
+  );
+  const { systemReduced, pageVisible } = useSkinMotion();
+
+  if (idleMotionEnabled && !systemReduced && pageVisible) return <BbDubaiIdleLoop />;
+  return <img src={bbDubaiTrialPortrait} alt="" draggable={false} />;
+}
+
+function BbDubaiIdleLoop() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playback, setPlayback] = useState<'loading' | 'playing' | 'failed'>('loading');
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    let active = true;
+    video.muted = true;
+    video.play().catch(() => {
+      if (active) setPlayback('failed');
+    });
+    return () => {
+      active = false;
+      video.pause();
+    };
+  }, []);
+
+  return (
+    <>
+      <img src={bbDubaiTrialPortrait} alt="" draggable={false} hidden={playback === 'playing'} />
+      {playback !== 'failed' && (
+        <video
+          ref={videoRef}
+          src={bbDubaiIdleClip}
+          data-playing={playback === 'playing'}
+          onPlaying={() => setPlayback('playing')}
+          onPause={() => setPlayback((current) => (current === 'playing' ? 'loading' : current))}
+          onError={() => setPlayback('failed')}
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+      )}
+    </>
   );
 }
 

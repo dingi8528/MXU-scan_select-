@@ -1267,6 +1267,7 @@ function AppContent() {
           theme: localAppearance.theme,
           skinId: localAppearance.skinId,
           skinReducedMotion: localAppearance.skinReducedMotion,
+          skinBbDubaiAnimated: localAppearance.skinBbDubaiAnimated,
           accentColor: localAppearance.accentColor,
           language: localAppearance.language,
           backgroundImage: localAppearance.backgroundImage,

@@ -134,8 +134,19 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai-purple'] {
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--bb-gold) 21%, transparent);
 }
 
-[data-mxu-skin='bb-dubai-purple'] .bb-dubai-portrait img {
+[data-mxu-skin='bb-dubai-purple'] .bb-dubai-portrait :is(img, video) {
   filter: drop-shadow(0 0 10px var(--bb-moon-glow));
+}
+
+/* The loop crop includes more of BB's left arm than the 330px-wide reference still. */
+[data-mxu-skin='bb-dubai-purple'] .bb-dubai-portrait video {
+  top: calc(var(--bb-portrait-top) - var(--bb-portrait-width) * 2 / 330);
+  right: calc(var(--bb-portrait-right) - var(--bb-portrait-width) * 8 / 330);
+  width: calc(var(--bb-portrait-width) * 380 / 330);
+}
+
+[data-mxu-skin='bb-dubai-purple'] .bb-dubai-portrait video:not([data-playing='true']) {
+  visibility: hidden;
 }
 
 [data-mxu-skin='bb-dubai-purple'] .scene-heading .bb-dubai-portrait figcaption {

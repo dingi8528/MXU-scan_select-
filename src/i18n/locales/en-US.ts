@@ -112,6 +112,9 @@ export default {
     skinDeepseek: 'Blue Fat Fish',
     skinNaiwa: 'Naiwa',
     skinBbDubai: 'BB Dubai',
+    skinBbDubaiAnimated: 'Play BB’s idle animation',
+    skinBbDubaiAnimatedHint:
+      'Loops silently while idle. Turn this off or reduce motion to show the static portrait.',
     skinChaldeaCommand: 'Chaldea Command Room',
     skinReducedMotion: 'Reduce skin motion',
     skinReducedMotionHint:

@@ -180,6 +180,9 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
 }
 
 .bb-dubai-portrait {
+  --bb-portrait-top: 2px;
+  --bb-portrait-right: clamp(36px, 10vw, 132px);
+  --bb-portrait-width: clamp(123px, 22vh, 198px);
   position: absolute;
   inset: 0 0 0 auto;
   width: min(42%, 410px);
@@ -189,11 +192,11 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
   user-select: none;
 }
 
-.bb-dubai-portrait img {
+.bb-dubai-portrait :is(img, video) {
   position: absolute;
-  top: 2px;
-  right: clamp(36px, 10vw, 132px);
-  width: clamp(123px, 22vh, 198px);
+  top: var(--bb-portrait-top);
+  right: var(--bb-portrait-right);
+  width: var(--bb-portrait-width);
   max-width: none;
   height: auto;
   filter: drop-shadow(0 0 16px #e1bd6b29);
@@ -225,6 +228,8 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
 }
 
 .bb-dubai-portrait--preview {
+  --bb-portrait-right: clamp(10px, 8vw, 86px);
+  --bb-portrait-width: 150px;
   position: relative;
   inset: auto;
   width: 100%;
@@ -245,11 +250,6 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
 .bb-dubai-portrait--preview figcaption strong {
   color: #f3f6ff;
   font-size: clamp(16px, 2.1vw, 24px);
-}
-
-.bb-dubai-portrait--preview img {
-  width: 150px;
-  right: clamp(10px, 8vw, 86px);
 }
 
 .scene-workspace--bb-dubai .scene-navigation {
@@ -372,13 +372,10 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
   }
 
   .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait {
+    --bb-portrait-top: 8px;
+    --bb-portrait-right: 1px;
+    --bb-portrait-width: 119px;
     width: min(47%, 230px);
-  }
-
-  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait img {
-    top: 8px;
-    right: 1px;
-    width: 119px;
   }
 
   .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait figcaption {
@@ -397,8 +394,8 @@ html.dark :is(.skin-shell, body)[data-mxu-skin='bb-dubai'] {
 }
 
 @media (forced-colors: active) {
-  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait img,
-  .bb-dubai-portrait--preview img {
+  .scene-workspace--bb-dubai .scene-heading .bb-dubai-portrait :is(img, video),
+  .bb-dubai-portrait--preview :is(img, video) {
     display: none;
   }
 }
