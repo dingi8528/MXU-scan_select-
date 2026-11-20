@@ -67,8 +67,10 @@ export const sanitizeOptionValue = (
     return null;
   }
 
-  if ((!optionDef.type || optionDef.type === 'select' || optionDef.type === 'scan_select') &&
-      value.type === 'select') {
+  if (
+    (!optionDef.type || optionDef.type === 'select' || optionDef.type === 'scan_select') &&
+    value.type === 'select'
+  ) {
     const caseExists = optionDef.cases.some((caseDef) => caseDef.name === value.caseName);
     if (!caseExists) {
       warn?.(`选项 "${optionKey}" 的 case "${value.caseName}" 已不存在，已重置为默认值`);
@@ -188,7 +190,10 @@ export const convertPresetOptionValue = (
     return { type: 'hotkey', values: presetValue as Record<string, string> };
   }
 
-  if ((!optDef.type || optDef.type === 'select' || optDef.type === 'scan_select') && typeof presetValue === 'string') {
+  if (
+    (!optDef.type || optDef.type === 'select' || optDef.type === 'scan_select') &&
+    typeof presetValue === 'string'
+  ) {
     return { type: 'select', caseName: presetValue };
   }
 

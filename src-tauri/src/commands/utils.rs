@@ -2,7 +2,9 @@
 //!
 //! 提供路径处理和其他通用工具函数
 
-use super::types::{MaaCallbackEvent, MaaState, StateChangedEvent, TaskFailureReason, TaskRunEvent};
+use super::types::{
+    MaaCallbackEvent, MaaState, StateChangedEvent, TaskFailureReason, TaskRunEvent,
+};
 use crate::ws_broadcast::{WsBroadcast, WsEvent};
 use std::cell::Cell;
 use std::path::PathBuf;
@@ -136,7 +138,8 @@ pub fn handle_task_callback(
             instance.task_results.insert(task_id, is_succeeded);
         }
 
-        first_task_started = is_started && !instance.stop_in_progress && !instance.first_task_started;
+        first_task_started =
+            is_started && !instance.stop_in_progress && !instance.first_task_started;
         instance.first_task_started |= first_task_started;
 
         let state = &mut instance.task_run_state;
